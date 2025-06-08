@@ -6,15 +6,23 @@ spring:
     name: intershop
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/intershop
+    url: ${SPRING_DATASOURCE_URL}
     driver-class-name: org.postgresql.Driver
-    username: sa
-    password: sa
+    username: ${SPRING_DATASOURCE_USER}
+    password: ${SPRING_DATASOURCE_PASSWORD}
 
   jpa:
     hibernate:
       ddl-auto: validate
     show-sql: true
 
+  thymeleaf:
+    check-template-location: true
+    cache: false
+
 intershop:
   path-for-upload-image: uploads
+
+logging:
+  level:
+    org.thymeleaf: DEBUG
