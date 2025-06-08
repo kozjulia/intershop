@@ -30,14 +30,14 @@ public class MainController extends RedirectController {
      */
     @GetMapping("/items")
     public String getMainPage(
-            @RequestParam(name = "search", required = false) String search,
-            @RequestParam(name = "sort", required = false, defaultValue = "NO") ItemSort sort,
-            @RequestParam(name = "pageSize", required = false, defaultValue = "10") Integer pageSize,
-            @RequestParam(name = "pageNumber", required = false, defaultValue = "1") Integer pageNumber,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false, defaultValue = "NO") ItemSort sort,
+            @RequestParam(required = false, defaultValue = "10") Integer pageSize,
+            @RequestParam(required = false, defaultValue = "1") Integer pageNumber,
             Model model
     ) {
 
-        List<ItemDto> items = itemService.findAllPagingAndSorting(search, sort, pageSize, pageNumber);
+        List<ItemDto> items = itemService.findAllItemsPagingAndSorting(search, sort, pageSize, pageNumber);
 
         model.addAttribute("items", items);
         model.addAttribute("search", search);

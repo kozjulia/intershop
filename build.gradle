@@ -47,8 +47,10 @@ dependencies {
     implementation 'org.flywaydb:flyway-database-postgresql'
     runtimeOnly 'org.postgresql:postgresql'
 
+    implementation 'commons-io:commons-io:2.19.0'
+
     annotationProcessor 'org.projectlombok:lombok'
-    testCompileOnly 'org.projectlombok:lombok' //:1.18.38'
+    testCompileOnly 'org.projectlombok:lombok'
     testAnnotationProcessor 'org.projectlombok:lombok'
     implementation 'org.mapstruct:mapstruct:1.5.5.Final'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
@@ -81,6 +83,7 @@ def jacocoExclusions = [
         'ru.yandex.practicum.intershop.IntershopApplication',
         'ru/yandex/**/controller/**',
         'ru/yandex/**/dto/**',
+        'ru/yandex/**/exception/**',
         'ru/yandex/**/mapper/**',
         'ru/yandex/**/model/**',
         'ru/yandex/**/repository/**',

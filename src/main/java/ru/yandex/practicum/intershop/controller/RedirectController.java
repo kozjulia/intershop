@@ -7,7 +7,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class RedirectController {
 
     protected static final String TEMPLATE_MAIN = "/main";
-    protected static final String TEMPLATE_MAIN_ITEMS = "/main/items";
+    protected static final String TEMPLATE_ITEM = "/item";
+    protected static final String TEMPLATE_ADD_ITEM = "/add-item";
+    protected static final String REDIRECT_ITEMS = "redirect:/items";
     protected static final String REDIRECT_MAIN_ITEMS = "redirect:/main/items";
     protected static final String SLASH = "/";
 
