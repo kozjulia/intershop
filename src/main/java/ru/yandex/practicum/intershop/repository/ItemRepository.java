@@ -9,17 +9,21 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.intershop.model.ItemEntity;
 
+import java.util.List;
+
 @Repository
 public interface ItemRepository extends JpaRepository<ItemEntity, Long> {
 
     @Query("""
             SELECT item
             FROM ItemEntity item
-            WHERE :search IS NULL 
+            WHERE :search IS NULL
             OR item.title ILIKE %:search%
             OR item.description ILIKE %:search%
             """)
     Page<ItemEntity> searchAllPagingAndSorting(@Param("search") String search, Pageable pageable);
+
+    List<ItemEntity> findAllByIdIn(List<Long> itemIds);
 
     @Modifying
     @Query("""

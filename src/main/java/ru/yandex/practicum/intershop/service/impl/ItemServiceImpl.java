@@ -76,6 +76,15 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
+    public List<ItemDto> findAllItemsByIds(List<Long> itemIds) {
+
+        return itemRepository.findAllByIdIn(itemIds)
+                .stream()
+                .map(itemMapper::toItemDto)
+                .toList();
+    }
+
+    @Override
     @Transactional
     public Long addItem(String title, String description, MultipartFile image, Integer count, BigDecimal price) {
 

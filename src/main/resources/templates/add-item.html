@@ -10,7 +10,8 @@
 <a href="/main/items" style="float:right;">
     <b>НА ГЛАВНУЮ &cudarrr;</b>
 </a>
-<form method="POST" th:action="${item==null ? '/items' : '/items/'+item.getId()}" enctype="multipart/form-data">
+<form method="POST" th:action="${item==null ? '/items' : '/items/'+item.getId() + '/edit'}"
+      enctype="multipart/form-data">
     <table style="width:50%;margin-left:auto;margin-right:auto;">
         <tr>
             <td>

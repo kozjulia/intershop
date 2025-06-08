@@ -15,6 +15,8 @@ public interface ItemService {
 
     List<ItemDto> findAllItemsPagingAndSorting(String search, ItemSort itemSort, Integer pageSize, Integer pageNumber);
 
+    List<ItemDto> findAllItemsByIds(List<Long> itemIds);
+
     Long addItem(String title, String description, MultipartFile image, Integer count, BigDecimal price);
 
     void editItem(Long itemId, String title, String description, MultipartFile image, Integer count, BigDecimal price);

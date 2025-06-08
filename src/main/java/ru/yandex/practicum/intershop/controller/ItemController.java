@@ -10,7 +10,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
+import ru.yandex.practicum.intershop.dto.Action;
 import ru.yandex.practicum.intershop.dto.ItemDto;
+import ru.yandex.practicum.intershop.service.CartService;
 import ru.yandex.practicum.intershop.service.ItemService;
 
 import java.math.BigDecimal;
@@ -20,6 +22,7 @@ import java.math.BigDecimal;
 @RequiredArgsConstructor
 public class ItemController extends RedirectController {
 
+    private final CartService cartService;
     private final ItemService itemService;
 
     /**
@@ -104,7 +107,7 @@ public class ItemController extends RedirectController {
      * @param price       Цена товара
      * @return Редирект на отредактированный "/items/{id}"
      */
-    @PostMapping("{id}")
+    @PostMapping("{id}/edit")
     public String editItem(
             @PathVariable("id") Long itemId,
             @RequestParam String title,
@@ -130,5 +133,20 @@ public class ItemController extends RedirectController {
         itemService.deleteItem(itemId);
 
         return REDIRECT_MAIN_ITEMS;
+    }
+
+    /**
+     * @param itemId Идентификатор товара
+     * @param action Действие с товаром в корзине
+     * @return Редирект на "/items/{id}"
+     */
+    @PostMapping("{id}")
+    public String changeItemCountInCart(
+            @PathVariable("id") Long itemId,
+            @RequestParam String action
+    ) {
+        cartService.changeItemCountInCartByItemId(itemId, Action.forName(action));
+
+        return REDIRECT_ITEMS + SLASH + itemId;
     }
 }
