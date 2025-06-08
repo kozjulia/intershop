@@ -1,0 +1,3 @@
+TRUNCATE TABLE orders_items;
+TRUNCATE TABLE orders;
+TRUNCATE TABLE items;
