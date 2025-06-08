@@ -12,7 +12,8 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 @AutoConfigureMockMvc
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @ContextConfiguration(
-        classes = {IntershopApplication.class, TestcontainersConfiguration.class}
+        classes = IntershopApplication.class,
+        initializers = PostgresInitializer.class
 )
 @Sql(scripts = {"/truncate-tables.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 public class BaseIntegrationTest {
