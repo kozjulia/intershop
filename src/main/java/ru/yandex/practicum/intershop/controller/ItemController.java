@@ -17,15 +17,23 @@ import ru.yandex.practicum.intershop.service.ItemService;
 
 import java.math.BigDecimal;
 
+import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.REDIRECT_ITEMS;
+import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.REDIRECT_MAIN_ITEMS;
+import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.SLASH;
+import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.TEMPLATE_ADD_ITEM;
+import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.TEMPLATE_ITEM;
+
 @Controller
 @RequestMapping("/items")
 @RequiredArgsConstructor
-public class ItemController extends RedirectController {
+public class ItemController {
 
     private final CartService cartService;
     private final ItemService itemService;
 
     /**
+     * Карточка товара
+     *
      * @param itemId Идентификатор товара
      * @param model  Модель
      * @return Шаблон "item.html"
@@ -97,7 +105,7 @@ public class ItemController extends RedirectController {
     }
 
     /**
-     * Редактирование пост
+     * Редактирование товара
      *
      * @param itemId      Идентификатор товара
      * @param title       Название товара
@@ -123,7 +131,7 @@ public class ItemController extends RedirectController {
     }
 
     /**
-     * Эндпоинт удаления товара
+     * Удаление товара
      *
      * @param itemId Идентификатор товара
      * @return Редирект на "/main/items"
@@ -136,6 +144,8 @@ public class ItemController extends RedirectController {
     }
 
     /**
+     * Изменение количества товара в корзине
+     *
      * @param itemId Идентификатор товара
      * @param action Действие с товаром в корзине
      * @return Редирект на "/items/{id}"

@@ -10,6 +10,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import ru.yandex.practicum.intershop.dto.CartItemDto;
 import ru.yandex.practicum.intershop.dto.ItemDto;
 import ru.yandex.practicum.intershop.dto.ItemSort;
 import ru.yandex.practicum.intershop.exception.NotFoundException;
@@ -141,6 +142,13 @@ public class ItemServiceImpl implements ItemService {
     public void deleteItem(Long itemId) {
 
         itemRepository.deleteById(itemId);
+    }
+
+    @Override
+    @Transactional
+    public void updateItem(CartItemDto cartItemDto) {
+
+        itemRepository.updateCountItem(cartItemDto.getItemId(), cartItemDto.getCount());
     }
 
     private Pageable resolvePageable(ItemSort itemSort, Integer pageSize, Integer pageNumber) {

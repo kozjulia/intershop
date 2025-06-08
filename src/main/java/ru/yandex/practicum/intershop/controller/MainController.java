@@ -17,15 +17,20 @@ import ru.yandex.practicum.intershop.service.ItemService;
 
 import java.util.List;
 
+import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.REDIRECT_MAIN_ITEMS;
+import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.TEMPLATE_MAIN;
+
 @Controller
 @RequestMapping("/main/items")
 @RequiredArgsConstructor
-public class MainController extends RedirectController {
+public class MainController {
 
     private final CartService cartService;
     private final ItemService itemService;
 
     /**
+     * Список всех товаров плиткой на главной странице
+     *
      * @param search     Строка с поисков по названию/описанию товара (по умолчанию, пустая строка - все товары)
      * @param sort       Сортировка перечисление NO, ALPHA, PRICE (по умолчанию, NO - не использовать сортировку)
      * @param pageSize   Максимальное число товаров на странице (по умолчанию, 10)
@@ -53,6 +58,8 @@ public class MainController extends RedirectController {
     }
 
     /**
+     * Изменение количества товара в корзине
+     *
      * @param itemId Идентификатор товара
      * @param action Действие с товаром в корзине
      * @return Редирект на "/main/items"

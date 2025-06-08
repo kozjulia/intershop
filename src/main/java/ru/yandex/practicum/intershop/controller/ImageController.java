@@ -15,6 +15,8 @@ public class ImageController {
     private final ItemService itemService;
 
     /**
+     * Получение изображения товара
+     *
      * @param imagePath Путь к изображению товара
      * @return Набор байт картинки товара
      */

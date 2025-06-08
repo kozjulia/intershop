@@ -3,6 +3,7 @@ package ru.yandex.practicum.intershop.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.intershop.dto.Action;
+import ru.yandex.practicum.intershop.dto.CartItemDto;
 import ru.yandex.practicum.intershop.dto.ItemDto;
 import ru.yandex.practicum.intershop.exception.NotFoundException;
 import ru.yandex.practicum.intershop.service.CartService;
@@ -40,6 +41,22 @@ public class CartServiceImpl implements CartService {
             case DELETE -> cart.remove(itemId);
             default -> new NotFoundException("Действия: " + action + " не существует");
         }
+    }
+
+    @Override
+    public List<CartItemDto> getAndResetCart() {
+
+        List<CartItemDto> cartItemDtos = cart.entrySet()
+                .stream()
+                .map(entry -> CartItemDto.builder()
+                        .itemId(entry.getKey())
+                        .count(entry.getValue())
+                        .build())
+                .toList();
+
+        cart.clear();
+
+        return cartItemDtos;
     }
 
     private ItemDto convertItemWithCartCount(ItemDto item) {

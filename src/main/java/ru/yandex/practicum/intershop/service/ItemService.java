@@ -1,6 +1,7 @@
 package ru.yandex.practicum.intershop.service;
 
 import org.springframework.web.multipart.MultipartFile;
+import ru.yandex.practicum.intershop.dto.CartItemDto;
 import ru.yandex.practicum.intershop.dto.ItemDto;
 import ru.yandex.practicum.intershop.dto.ItemSort;
 
@@ -22,4 +23,6 @@ public interface ItemService {
     void editItem(Long itemId, String title, String description, MultipartFile image, Integer count, BigDecimal price);
 
     void deleteItem(Long itemId);
+
+    void updateItem(CartItemDto cartItemDto);
 }

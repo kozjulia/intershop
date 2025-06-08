@@ -15,14 +15,19 @@ import ru.yandex.practicum.intershop.service.CartService;
 import java.math.BigDecimal;
 import java.util.List;
 
+import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.REDIRECT_CART_ITEMS;
+import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.TEMPLATE_CART;
+
 @Controller
 @RequestMapping("/cart/items")
 @RequiredArgsConstructor
-public class CartController extends RedirectController {
+public class CartController {
 
     private final CartService cartService;
 
     /**
+     * Список товаров в корзине
+     *
      * @param model Модель
      * @return Шаблон "cart.html"
      */
@@ -42,6 +47,8 @@ public class CartController extends RedirectController {
     }
 
     /**
+     * Изменение количества товара в корзине
+     *
      * @param itemId Идентификатор товара
      * @param action Действие с товаром в корзине
      * @return Редирект на "/cart/items"

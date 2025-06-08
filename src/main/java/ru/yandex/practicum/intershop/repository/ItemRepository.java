@@ -32,4 +32,12 @@ public interface ItemRepository extends JpaRepository<ItemEntity, Long> {
             WHERE item.id = :itemId
             """)
     void updateImagePath(@Param("itemId") Long itemId, @Param("imgPath") String imgPath);
+
+    @Modifying
+    @Query("""
+            UPDATE ItemEntity item
+            SET item.count = item.count - :count
+            WHERE item.id = :itemId
+            """)
+    void updateCountItem(@Param("itemId") Long itemId, @Param("count") Integer count);
 }

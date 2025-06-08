@@ -6,8 +6,9 @@ CREATE TABLE orders
 
 CREATE TABLE orders_items
 (
-    order_id BIGINT NOT NULL,
-    item_id  BIGINT NOT NULL,
+    order_id BIGINT  NOT NULL,
+    item_id  BIGINT  NOT NULL,
+    count    INTEGER NOT NULL,
     CONSTRAINT orders_items_pk PRIMARY KEY (order_id, item_id),
     CONSTRAINT fk_orders_items_to_orders FOREIGN KEY (order_id) REFERENCES orders (id),
     CONSTRAINT fk_orders_items_to_items FOREIGN KEY (item_id) REFERENCES items (id)
