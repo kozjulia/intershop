@@ -1,6 +1,8 @@
 package ru.yandex.practicum.intershop.model;
 
 import jakarta.persistence.Embeddable;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -17,7 +19,11 @@ import java.io.Serializable;
 @AllArgsConstructor
 public class OrderItemKey implements Serializable {
 
-    private Long orderId;
+    @ManyToOne
+    @JoinColumn(name = "order_id")
+    private OrderEntity order;
 
-    private Long itemId;
+    @ManyToOne
+    @JoinColumn(name = "item_id")
+    private ItemEntity item;
 }

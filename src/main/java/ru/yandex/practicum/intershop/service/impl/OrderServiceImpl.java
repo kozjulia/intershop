@@ -42,14 +42,12 @@ public class OrderServiceImpl implements OrderService {
         orderItemRepository.saveAll(items.stream()
                 .map(item -> OrderItemEntity.builder()
                         .id(OrderItemKey.builder()
-                                .orderId(orderId)
-                                .itemId(item.getItemId())
-                                .build())
-                        .order(OrderEntity.builder()
-                                .id(orderId)
-                                .build())
-                        .item(ItemEntity.builder()
-                                .id(item.getItemId())
+                                .order(OrderEntity.builder()
+                                        .id(orderId)
+                                        .build())
+                                .item(ItemEntity.builder()
+                                        .id(item.getItemId())
+                                        .build())
                                 .build())
                         .count(item.getCount())
                         .build())
@@ -79,7 +77,7 @@ public class OrderServiceImpl implements OrderService {
 
         List<OrderItemEntity> orderItems = orderItemRepository.findAll()
                 .stream()
-                .filter(orderItem -> orderItem.getId().getOrderId().equals(orderId))
+                .filter(orderItem -> orderItem.getId().getOrder().getId().equals(orderId))
                 .toList();
 
         return orderRepository.findById(orderId)
@@ -100,8 +98,8 @@ public class OrderServiceImpl implements OrderService {
 
     private ItemDto getUpdatedItem(ItemDto itemDto, Long orderId, List<OrderItemEntity> orderItems) {
         Integer orderCount = orderItems.stream()
-                .filter(orderItem -> orderItem.getId().getOrderId().equals(orderId))
-                .filter(orderItem -> orderItem.getId().getItemId().equals(itemDto.getId()))
+                .filter(orderItem -> orderItem.getId().getOrder().getId().equals(orderId))
+                .filter(orderItem -> orderItem.getId().getItem().getId().equals(itemDto.getId()))
                 .map(OrderItemEntity::getCount)
                 .findFirst()
                 .orElse(0);
