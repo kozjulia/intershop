@@ -79,7 +79,7 @@ public class OrderServiceImpl implements OrderService {
 
         List<OrderItemEntity> orderItems = orderItemRepository.findAll()
                 .stream()
-                .filter(orderItem -> orderItem.getOrder().getId().equals(orderId))
+                .filter(orderItem -> orderItem.getId().getOrderId().equals(orderId))
                 .toList();
 
         return orderRepository.findById(orderId)
@@ -100,8 +100,8 @@ public class OrderServiceImpl implements OrderService {
 
     private ItemDto getUpdatedItem(ItemDto itemDto, Long orderId, List<OrderItemEntity> orderItems) {
         Integer orderCount = orderItems.stream()
-                .filter(orderItem -> orderItem.getOrder().getId().equals(orderId))
-                .filter(orderItem -> orderItem.getItem().getId().equals(itemDto.getId()))
+                .filter(orderItem -> orderItem.getId().getOrderId().equals(orderId))
+                .filter(orderItem -> orderItem.getId().getItemId().equals(itemDto.getId()))
                 .map(OrderItemEntity::getCount)
                 .findFirst()
                 .orElse(0);
