@@ -25,7 +25,7 @@ public interface ItemRepository extends JpaRepository<ItemEntity, Long> {
 
     List<ItemEntity> findAllByIdIn(List<Long> itemIds);
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("""
             UPDATE ItemEntity item
             SET item.imgPath = :imgPath
@@ -33,7 +33,7 @@ public interface ItemRepository extends JpaRepository<ItemEntity, Long> {
             """)
     void updateImagePath(@Param("itemId") Long itemId, @Param("imgPath") String imgPath);
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("""
             UPDATE ItemEntity item
             SET item.count = item.count - :count

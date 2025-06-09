@@ -57,7 +57,7 @@ public class ItemController {
      */
     @GetMapping("/add")
     public String getAddingForm(Model model) {
-        model.addAttribute("post", null);
+        model.addAttribute("item", null);
 
         return TEMPLATE_ADD_ITEM;
     }
@@ -73,7 +73,7 @@ public class ItemController {
      * @return Редирект на созданный "/items/{id}"
      */
     @PostMapping
-    public String addPost(
+    public String addItem(
             @RequestParam String title,
             @RequestParam(required = false) String description,
             @RequestPart MultipartFile image,

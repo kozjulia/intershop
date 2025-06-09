@@ -4,3 +4,6 @@ spring:
     driver-class-name: org.postgresql.Driver
     username: testuser
     password: testpass
+
+intershop:
+  path-for-upload-image: uploads

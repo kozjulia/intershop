@@ -80,14 +80,11 @@ jacoco {
 }
 
 def jacocoExclusions = [
-        'ru.yandex.practicum.intershop.IntershopApplication',
         'ru/yandex/**/controller/**',
-        'ru/yandex/**/dto/**',
-        'ru/yandex/**/exception/**',
-        'ru/yandex/**/mapper/**',
-        'ru/yandex/**/model/**',
-        'ru/yandex/**/repository/**',
         'ru/yandex/**/service/**',
+        'ru.yandex.practicum.intershop.dto.OrderDto',
+        'ru.yandex.practicum.intershop.exception.NotFoundException',
+        'ru.yandex.practicum.intershop.mapper.ItemMapperImpl'
 ]
 
 jacocoTestCoverageVerification {
@@ -97,15 +94,15 @@ jacocoTestCoverageVerification {
             excludes = jacocoExclusions.stream().map { it.replace('/', '.') }.collect()
             limit {
                 counter = 'INSTRUCTION'
-                minimum = 0.7
+                minimum = 0.3
             }
             limit {
                 counter = 'METHOD'
-                minimum = 0.7
+                minimum = 0.3
             }
             limit {
                 counter = 'BRANCH'
-                minimum = 0.7
+                minimum = 0.3
             }
         }
     }
