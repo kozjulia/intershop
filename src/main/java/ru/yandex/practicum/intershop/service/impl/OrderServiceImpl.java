@@ -11,6 +11,7 @@ import ru.yandex.practicum.intershop.model.ItemEntity;
 import ru.yandex.practicum.intershop.model.OrderEntity;
 import ru.yandex.practicum.intershop.model.OrderItemEntity;
 import ru.yandex.practicum.intershop.model.OrderItemKey;
+import ru.yandex.practicum.intershop.repository.ItemRepository;
 import ru.yandex.practicum.intershop.repository.OrderItemRepository;
 import ru.yandex.practicum.intershop.repository.OrderRepository;
 import ru.yandex.practicum.intershop.service.CartService;
@@ -27,6 +28,7 @@ public class OrderServiceImpl implements OrderService {
     private final ItemMapper itemMapper;
     private final CartService cartService;
     private final ItemService itemService;
+    private final ItemRepository itemRepository;
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
 
@@ -36,22 +38,20 @@ public class OrderServiceImpl implements OrderService {
 
         List<CartItemDto> items = cartService.getAndResetCart();
 
-        Long orderId = orderRepository.save(new OrderEntity())
+        Long orderId = orderRepository.saveAndFlush(new OrderEntity())
                 .getId();
 
-        orderItemRepository.saveAll(items.stream()
+        List<OrderItemEntity> orderItemEntities = items.stream()
                 .map(item -> OrderItemEntity.builder()
                         .id(OrderItemKey.builder()
-                                .order(OrderEntity.builder()
-                                        .id(orderId)
-                                        .build())
-                                .item(ItemEntity.builder()
-                                        .id(item.getItemId())
-                                        .build())
+                                .order(orderRepository.getReferenceById(orderId))
+                                .item(itemRepository.getReferenceById(item.getItemId()))
                                 .build())
                         .count(item.getCount())
                         .build())
-                .toList());
+                .toList();
+
+        orderItemRepository.saveAllAndFlush(orderItemEntities);
 
         items.forEach(itemService::updateItem);
 
