@@ -1,5 +1,7 @@
 plugins {
     id 'java'
+    id 'jacoco'
+    id 'checkstyle'
     id 'org.springframework.boot' version '3.5.0'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'com.gorylenko.gradle-git-properties' version '2.4.2'
@@ -45,8 +47,13 @@ dependencies {
     implementation 'org.flywaydb:flyway-database-postgresql'
     runtimeOnly 'org.postgresql:postgresql'
 
-    compileOnly 'org.projectlombok:lombok'
+    implementation 'commons-io:commons-io:2.19.0'
+
     annotationProcessor 'org.projectlombok:lombok'
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+    implementation 'org.mapstruct:mapstruct:1.5.5.Final'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.boot:spring-boot-testcontainers'
@@ -56,8 +63,65 @@ dependencies {
 }
 
 tasks.named('test') {
+    failFast = true
     useJUnitPlatform()
+    finalizedBy jacocoTestReport
+    testLogging {
+        events = ['FAILED', 'PASSED', 'SKIPPED']
+    }
 }
+
+checkstyle {
+    configDirectory.set(file("$rootProject.projectDir/checkstyle"))
+}
+
+jacoco {
+    toolVersion = '0.8.12'
+}
+
+def jacocoExclusions = [
+        'ru/yandex/**/controller/**',
+        'ru/yandex/**/service/**',
+        'ru.yandex.practicum.intershop.dto.OrderDto',
+        'ru.yandex.practicum.intershop.exception.NotFoundException',
+        'ru.yandex.practicum.intershop.mapper.ItemMapperImpl'
+]
+
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            element = 'CLASS'
+            excludes = jacocoExclusions.stream().map { it.replace('/', '.') }.collect()
+            limit {
+                counter = 'INSTRUCTION'
+                minimum = 0.3
+            }
+            limit {
+                counter = 'METHOD'
+                minimum = 0.3
+            }
+            limit {
+                counter = 'BRANCH'
+                minimum = 0.3
+            }
+        }
+    }
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = false
+        csv.required = false
+    }
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: jacocoExclusions)
+        }))
+    }
+}
+
+check.dependsOn jacocoTestCoverageVerification
 
 wrapper {
     gradleVersion = '8.14'

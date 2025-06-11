@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  intershop:
+    build: .
+    image: intershop
+    container_name: intershop-container
+    ports:
+      - 8087:8087
+    depends_on:
+      - intershop-db
+    restart: on-failure
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://intershop-db:5432/intershop
+      - SPRING_DATASOURCE_USER=intershop
+      - SPRING_DATASOURCE_PASSWORD=intershop
+
+  intershop-db:
+    image: postgres:16-alpine
+    container_name: intershop-db-container
+    volumes:
+      - /var/lib/postgresql/data/
+    ports:
+      - 6541:5432
+    environment:
+      - POSTGRES_DB=intershop
+      - POSTGRES_USER=intershop
+      - POSTGRES_PASSWORD=intershop

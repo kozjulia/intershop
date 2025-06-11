@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Витрина товаров</title>
+</head>
+
+<body>
+<a href="/main/items" style="float:right;">
+    <b>НА ГЛАВНУЮ &cudarrr;</b>
+</a>
+<form method="POST" th:action="${item==null ? '/items' : '/items/'+item.getId() + '/edit'}"
+      enctype="multipart/form-data">
+    <table style="width:50%;margin-left:auto;margin-right:auto;">
+        <tr>
+            <td>
+                <h3>Название</h3>
+                <textarea rows="2" style="width: 100%;" name="title"
+                          th:text="${item==null ? '' : item.getTitle()}"></textarea>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <h3>Описание</h3>
+                <textarea rows="10" style="width: 100%;" name="description"
+                          th:text="${item==null ? '' : item.getDescription()}"></textarea>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <h3>Изображение</h3>
+                <input type="file" name="image">
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <h3>Количество</h3>
+                <input type="number" min="0" style="width: 100%;" name="count"
+                       th:value="${item == null ? 0 : item.getCount()}"/>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <h3>Цена</h3>
+                <input type="number" step="0.01" min="0" style="width: 100%;" name="price"
+                       th:value="${item == null ? 0.00 : item.getPrice()}"/>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <button type="submit" style="float:right;"
+                        th:text="${item==null ? 'Сохранить' : 'Редактировать'}"></button>
+            </td>
+        </tr>
+    </table>
+</form>
+</body>

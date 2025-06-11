@@ -1,3 +1,24 @@
+server:
+  port: 8087
+
 spring:
   application:
     name: intershop
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/intershop}
+    driver-class-name: org.postgresql.Driver
+    username: ${SPRING_DATASOURCE_USER:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:sa}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+
+  thymeleaf:
+    check-template-location: true
+    cache: false
+
+intershop:
+  path-for-upload-image: uploads
