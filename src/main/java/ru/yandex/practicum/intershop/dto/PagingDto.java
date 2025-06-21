@@ -9,13 +9,13 @@ public class PagingDto {
 
     private Integer pageNumber;
     private Integer pageSize;
-    private Integer totalSize;
+    private Long totalSize;
 
     public Boolean hasNext() {
-        return (pageNumber - 1) * pageSize < totalSize;
+        return (long) (pageNumber - 1) * pageSize < totalSize;
     }
 
     public Boolean hasPrevious() {
-        return (pageNumber - 1) * pageSize > totalSize;
+        return (long) (pageNumber - 1) * pageSize > totalSize;
     }
 }

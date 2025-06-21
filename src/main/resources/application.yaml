@@ -5,8 +5,14 @@ spring:
   application:
     name: intershop
 
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/intershop}
+    driver-class-name: org.postgresql.Driver
+    username: ${SPRING_DATASOURCE_USER:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:sa}
+
   r2dbc:
-    url: ${SPRING_DATASOURCE_URL:r2dbc:postgresql://localhost:5432/intershop}
+    url: ${SPRING_DATASOURCE_R2DBC_URL:r2dbc:postgresql://localhost:5432/intershop}
     username: ${SPRING_DATASOURCE_USER:sa}
     password: ${SPRING_DATASOURCE_PASSWORD:sa}
     pool:
@@ -23,3 +29,7 @@ spring:
 
 intershop:
   path-for-upload-image: uploads
+
+logging:
+  level:
+    io.r2dbc: DEBUG
