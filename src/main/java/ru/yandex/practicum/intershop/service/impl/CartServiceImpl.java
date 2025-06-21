@@ -5,15 +5,13 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.intershop.dto.Action;
 import ru.yandex.practicum.intershop.dto.CartItemDto;
 import ru.yandex.practicum.intershop.dto.ItemDto;
-import ru.yandex.practicum.intershop.exception.NotFoundException;
 import ru.yandex.practicum.intershop.service.CartService;
 import ru.yandex.practicum.intershop.service.ItemService;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static java.util.Objects.isNull;
 
 @Service
 @RequiredArgsConstructor
@@ -24,29 +22,34 @@ public class CartServiceImpl implements CartService {
     private final ItemService itemService;
 
     @Override
-    public List<ItemDto> getCart() {
-
-        return itemService.findAllItemsByIds(cart.keySet().stream().toList())
+    public Mono<List<ItemDto>> getCart() {
+/*
+        List<ItemDto> itemDtos = itemService.findAllItemsByIds(cart.keySet().stream().toList())
                 .stream()
                 .map(this::convertItemWithCartCount)
                 .toList();
+
+        return Mono.just(itemDtos);*/
+        return Mono.empty();
     }
 
     @Override
-    public void changeItemCountInCartByItemId(Long itemId, Action action) {
+    public Mono<Void> changeItemCountInCartByItemId(Long itemId, Action action) {
 
-        switch (action) {
+/*        switch (action) {
             case PLUS -> cart.compute(itemId, (k, v) -> isNull(v) ? 1 : v + 1);
             case MINUS -> cart.compute(itemId, (k, v) -> (isNull(v) || v == 0) ? 0 : v - 1);
             case DELETE -> cart.remove(itemId);
-            default -> new NotFoundException("Действия: " + action + " не существует");
-        }
+            default -> Mono.error(new NotFoundException("Действия: " + action + " не существует"));
+        }*/
+
+        return Mono.empty();
     }
 
     @Override
-    public List<CartItemDto> getAndResetCart() {
+    public Mono<List<CartItemDto>> getAndResetCart() {
 
-        List<CartItemDto> cartItemDtos = cart.entrySet()
+/*        List<CartItemDto> cartItemDtos = cart.entrySet()
                 .stream()
                 .map(entry -> CartItemDto.builder()
                         .itemId(entry.getKey())
@@ -56,7 +59,8 @@ public class CartServiceImpl implements CartService {
 
         cart.clear();
 
-        return cartItemDtos;
+        return Mono.just(cartItemDtos);*/
+        return Mono.empty();
     }
 
     private ItemDto convertItemWithCartCount(ItemDto item) {

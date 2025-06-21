@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
+import reactor.core.publisher.Mono;
 import ru.yandex.practicum.intershop.dto.Action;
 import ru.yandex.practicum.intershop.dto.ItemDto;
 import ru.yandex.practicum.intershop.service.CartService;
@@ -39,14 +40,14 @@ public class ItemController {
      * @return Шаблон "item.html"
      */
     @GetMapping("/{id}")
-    public String getItemById(
+    public Mono<String> getItemById(
             @PathVariable("id") Long itemId,
             Model model) {
 
-        ItemDto item = itemService.getItemById(itemId);
+        Mono<ItemDto> item = itemService.getItemById(itemId);
         model.addAttribute("item", item);
 
-        return TEMPLATE_ITEM;
+        return Mono.just(TEMPLATE_ITEM);
     }
 
     /**
@@ -56,10 +57,10 @@ public class ItemController {
      * @return Шаблон "add-item.html"
      */
     @GetMapping("/add")
-    public String getAddingForm(Model model) {
+    public Mono<String> getAddingForm(Model model) {
         model.addAttribute("item", null);
 
-        return TEMPLATE_ADD_ITEM;
+        return Mono.just(TEMPLATE_ADD_ITEM);
     }
 
     /**
@@ -73,7 +74,7 @@ public class ItemController {
      * @return Редирект на созданный "/items/{id}"
      */
     @PostMapping
-    public String addItem(
+    public Mono<String> addItem(
             @RequestParam String title,
             @RequestParam(required = false) String description,
             @RequestPart MultipartFile image,
@@ -81,9 +82,9 @@ public class ItemController {
             @RequestParam(required = false, defaultValue = "0,00") BigDecimal price
     ) {
 
-        Long itemId = itemService.addItem(title, description, image, count, price);
+        Mono<Long> itemId = itemService.addItem(title, description, image, count, price);
 
-        return REDIRECT_ITEMS + SLASH + itemId;
+        return Mono.just(REDIRECT_ITEMS + SLASH + itemId);
     }
 
     /**
@@ -94,14 +95,14 @@ public class ItemController {
      * @return Редирект на форму редактирования товара "add-item.html"
      */
     @GetMapping("/{id}/edit")
-    public String getEditingForm(
+    public Mono<String> getEditingForm(
             @PathVariable("id") Long itemId,
             Model model
     ) {
-        ItemDto item = itemService.getItemById(itemId);
+        Mono<ItemDto> item = itemService.getItemById(itemId);
         model.addAttribute("item", item);
 
-        return TEMPLATE_ADD_ITEM;
+        return Mono.just(TEMPLATE_ADD_ITEM);
     }
 
     /**
@@ -116,7 +117,7 @@ public class ItemController {
      * @return Редирект на отредактированный "/items/{id}"
      */
     @PostMapping("{id}/edit")
-    public String editItem(
+    public Mono<String> editItem(
             @PathVariable("id") Long itemId,
             @RequestParam String title,
             @RequestParam(required = false) String description,
@@ -127,7 +128,7 @@ public class ItemController {
 
         itemService.editItem(itemId, title, description, image, count, price);
 
-        return REDIRECT_ITEMS + SLASH + itemId;
+        return Mono.just(REDIRECT_ITEMS + SLASH + itemId);
     }
 
     /**
@@ -137,10 +138,10 @@ public class ItemController {
      * @return Редирект на "/main/items"
      */
     @PostMapping(value = "/{id}/delete")
-    public String deleteItem(@PathVariable("id") Long itemId) {
+    public Mono<String> deleteItem(@PathVariable("id") Long itemId) {
         itemService.deleteItem(itemId);
 
-        return REDIRECT_MAIN_ITEMS;
+        return Mono.just(REDIRECT_MAIN_ITEMS);
     }
 
     /**
@@ -151,12 +152,12 @@ public class ItemController {
      * @return Редирект на "/items/{id}"
      */
     @PostMapping("{id}")
-    public String changeItemCountInCart(
+    public Mono<String> changeItemCountInCart(
             @PathVariable("id") Long itemId,
             @RequestParam String action
     ) {
         cartService.changeItemCountInCartByItemId(itemId, Action.forName(action));
 
-        return REDIRECT_ITEMS + SLASH + itemId;
+        return Mono.just(REDIRECT_ITEMS + SLASH + itemId);
     }
 }

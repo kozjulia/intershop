@@ -1,28 +1,25 @@
 package ru.yandex.practicum.intershop.model;
 
-import jakarta.persistence.EmbeddedId;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.Immutable;
+import org.springframework.data.relational.core.mapping.Table;
 
 @Getter
 @Setter
-@Entity
+//@Entity
 @Builder
-@Immutable
+//@Immutable
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "orders_items")
 @EqualsAndHashCode(of = "id")
 public class OrderItemEntity {
 
-    @EmbeddedId
+    //  @EmbeddedId
     private OrderItemKey id;
 
     Integer count;

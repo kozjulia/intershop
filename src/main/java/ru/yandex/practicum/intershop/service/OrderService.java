@@ -1,14 +1,14 @@
 package ru.yandex.practicum.intershop.service;
 
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import ru.yandex.practicum.intershop.dto.OrderDto;
-
-import java.util.List;
 
 public interface OrderService {
 
-    Long createOrder();
+    Mono<Long> createOrder();
 
-    List<OrderDto> findOrders();
+    Flux<OrderDto> findOrders();
 
-    OrderDto findOrderById(Long orderId);
+    Mono<OrderDto> findOrderById(Long orderId);
 }

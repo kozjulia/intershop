@@ -3,19 +3,18 @@ package ru.yandex.practicum.intershop.service.impl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import ru.yandex.practicum.intershop.dto.CartItemDto;
 import ru.yandex.practicum.intershop.dto.ItemDto;
 import ru.yandex.practicum.intershop.dto.ItemSort;
-import ru.yandex.practicum.intershop.exception.NotFoundException;
 import ru.yandex.practicum.intershop.mapper.ItemMapper;
-import ru.yandex.practicum.intershop.model.ItemEntity;
 import ru.yandex.practicum.intershop.repository.ItemRepository;
 import ru.yandex.practicum.intershop.service.ItemService;
 
@@ -43,17 +42,18 @@ public class ItemServiceImpl implements ItemService {
     private String pathForUploadImage;
 
     @Override
-    public ItemDto getItemById(Long itemId) {
+    public Mono<ItemDto> getItemById(Long itemId) {
 
-        return itemRepository.findById(itemId)
+/*        return itemRepository.findById(itemId)
                 .map(itemMapper::toItemDto)
-                .orElse(null);
+                .orElse(null);*/
+        return Mono.empty();
     }
 
     @Override
-    public byte[] getItemImageByImagePath(String imagePath) {
+    public Mono<byte[]> getItemImageByImagePath(String imagePath) {
 
-        try {
+/*        try {
             Path path = Path.of(pathForUploadImage).resolve(imagePath);
 
             return Files.readAllBytes(path);
@@ -61,35 +61,38 @@ public class ItemServiceImpl implements ItemService {
             log.error("Фото для товара с путем: {} не получилось загрузить", imagePath);
         }
 
-        return new byte[0];
+        return new byte[0];*/
+        return Mono.empty();
     }
 
     @Override
-    public List<ItemDto> findAllItemsPagingAndSorting(String search, ItemSort itemSort, Integer pageSize, Integer pageNumber) {
+    public Flux<ItemDto> findAllItemsPagingAndSorting(String search, ItemSort itemSort, Integer pageSize, Integer pageNumber) {
 
-        Pageable page = resolvePageable(itemSort, pageSize, pageNumber - 1);
+/*        Pageable page = resolvePageable(itemSort, pageSize, pageNumber - 1);
         Page<ItemEntity> items = itemRepository.searchAllPagingAndSorting(search, page);
 
         return items.getContent()
                 .stream()
                 .map(itemMapper::toItemDto)
-                .toList();
+                .toList();*/
+        return Flux.empty();
     }
 
     @Override
-    public List<ItemDto> findAllItemsByIds(List<Long> itemIds) {
+    public Flux<ItemDto> findAllItemsByIds(List<Long> itemIds) {
 
-        return itemRepository.findAllByIdIn(itemIds)
+/*        return itemRepository.findAllByIdIn(itemIds)
                 .stream()
                 .map(itemMapper::toItemDto)
-                .toList();
+                .toList();*/
+        return Flux.empty();
     }
 
     @Override
     @Transactional
-    public Long addItem(String title, String description, MultipartFile image, Integer count, BigDecimal price) {
+    public Mono<Long> addItem(String title, String description, MultipartFile image, Integer count, BigDecimal price) {
 
-        ItemEntity item = ItemEntity.builder()
+/*        ItemEntity item = ItemEntity.builder()
                 .title(title)
                 .description(description)
                 .count(count)
@@ -110,14 +113,15 @@ public class ItemServiceImpl implements ItemService {
             log.error(IMAGE_UPLOAD_ERROR_TEMPLATE, itemId);
         }
 
-        return itemId;
+        return itemId;*/
+        return Mono.empty();
     }
 
     @Override
     @Transactional
-    public void editItem(Long itemId, String title, String description, MultipartFile image, Integer count, BigDecimal price) {
+    public Mono<Void> editItem(Long itemId, String title, String description, MultipartFile image, Integer count, BigDecimal price) {
 
-        ItemEntity item = itemRepository.findById(itemId)
+  /*      ItemEntity item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new NotFoundException("Товара с id: " + itemId + " не существует"));
         String imagePath = item.getImgPath();
 
@@ -134,21 +138,24 @@ public class ItemServiceImpl implements ItemService {
         item.setImgPath(imagePath);
         item.setCount(count);
         item.setPrice(price);
-        itemRepository.save(item);
+        itemRepository.save(item);*/
+        return Mono.empty();
     }
 
     @Override
     @Transactional
-    public void deleteItem(Long itemId) {
+    public Mono<Void> deleteItem(Long itemId) {
 
-        itemRepository.deleteById(itemId);
+        // itemRepository.deleteById(itemId);
+        return Mono.empty();
     }
 
     @Override
     @Transactional
-    public void updateItem(CartItemDto cartItemDto) {
+    public Mono<Void> updateItem(CartItemDto cartItemDto) {
 
-        itemRepository.updateCountItem(cartItemDto.getItemId(), cartItemDto.getCount());
+        //itemRepository.updateCountItem(cartItemDto.getItemId(), cartItemDto.getCount());
+        return Mono.empty();
     }
 
     private Pageable resolvePageable(ItemSort itemSort, Integer pageSize, Integer pageNumber) {

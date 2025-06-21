@@ -1,5 +1,6 @@
 package ru.yandex.practicum.intershop.service;
 
+import reactor.core.publisher.Mono;
 import ru.yandex.practicum.intershop.dto.Action;
 import ru.yandex.practicum.intershop.dto.CartItemDto;
 import ru.yandex.practicum.intershop.dto.ItemDto;
@@ -8,9 +9,9 @@ import java.util.List;
 
 public interface CartService {
 
-    List<ItemDto> getCart();
+    Mono<List<ItemDto>> getCart();
 
-    void changeItemCountInCartByItemId(Long itemId, Action action);
+    Mono<Void> changeItemCountInCartByItemId(Long itemId, Action action);
 
-    List<CartItemDto> getAndResetCart();
+    Mono<List<CartItemDto>> getAndResetCart();
 }

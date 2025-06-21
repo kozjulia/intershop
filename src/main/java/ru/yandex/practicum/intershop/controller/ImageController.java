@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import reactor.core.publisher.Mono;
 import ru.yandex.practicum.intershop.service.ItemService;
 
 @Controller
@@ -21,7 +22,7 @@ public class ImageController {
      * @return Набор байт картинки товара
      */
     @GetMapping("/{imagePath}")
-    public ResponseEntity<byte[]> getImageItem(@PathVariable String imagePath) {
+    public ResponseEntity<Mono<byte[]>> getImageItem(@PathVariable String imagePath) {
 
         return ResponseEntity.ok()
                 .contentType(MediaType.IMAGE_JPEG)

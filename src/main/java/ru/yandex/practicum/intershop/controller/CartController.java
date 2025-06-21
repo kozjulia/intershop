@@ -8,11 +8,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import reactor.core.publisher.Mono;
 import ru.yandex.practicum.intershop.dto.Action;
 import ru.yandex.practicum.intershop.dto.ItemDto;
 import ru.yandex.practicum.intershop.service.CartService;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.REDIRECT_CART_ITEMS;
@@ -32,18 +32,18 @@ public class CartController {
      * @return Шаблон "cart.html"
      */
     @GetMapping
-    public String getCart(Model model) {
+    public Mono<String> getCart(Model model) {
 
-        List<ItemDto> items = cartService.getCart();
-        BigDecimal total = items.stream()
+        Mono<List<ItemDto>> items = cartService.getCart();
+/*        BigDecimal total = items.stream()
                 .map(item -> item.getPrice().multiply(new BigDecimal(item.getCount())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .reduce(BigDecimal.ZERO, BigDecimal::add);*/
 
         model.addAttribute("items", items);
-        model.addAttribute("total", total);
-        model.addAttribute("empty", items.isEmpty());
+        //  model.addAttribute("total", total);
+        //  model.addAttribute("empty", items.isEmpty());
 
-        return TEMPLATE_CART;
+        return Mono.just(TEMPLATE_CART);
     }
 
     /**
@@ -54,12 +54,12 @@ public class CartController {
      * @return Редирект на "/cart/items"
      */
     @PostMapping("{id}")
-    public String changeItemCountInCart(
+    public Mono<String> changeItemCountInCart(
             @PathVariable("id") Long itemId,
             @RequestParam String action
     ) {
         cartService.changeItemCountInCartByItemId(itemId, Action.forName(action));
 
-        return REDIRECT_CART_ITEMS;
+        return Mono.just(REDIRECT_CART_ITEMS);
     }
 }
