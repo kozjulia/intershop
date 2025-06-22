@@ -6,12 +6,17 @@ import reactor.core.publisher.Flux;
 import ru.yandex.practicum.intershop.dto.Action;
 import ru.yandex.practicum.intershop.dto.CartItemDto;
 import ru.yandex.practicum.intershop.dto.ItemDto;
+import ru.yandex.practicum.intershop.exception.NotFoundException;
 import ru.yandex.practicum.intershop.service.CartService;
 import ru.yandex.practicum.intershop.service.ItemService;
 import reactor.core.publisher.Mono;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static java.util.Objects.isNull;
 
 @Service
 @RequiredArgsConstructor
@@ -23,44 +28,53 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public Flux<ItemDto> getCart() {
-/*
-        List<ItemDto> itemDtos = itemService.findAllItemsByIds(cart.keySet().stream().toList())
-                .stream()
-                .map(this::convertItemWithCartCount)
-                .toList();
 
-        return Mono.just(itemDtos);*/
-        return Flux.empty();
+        List<Long> itemIds = new ArrayList<>(cart.keySet());
+
+        return itemService.findAllItemsByIds(itemIds)
+                .map(this::convertItemWithCartCount)
+                .switchIfEmpty(Flux.empty());
     }
 
     @Override
     public Mono<Void> changeItemCountInCartByItemId(Long itemId, Action action) {
 
-/*        switch (action) {
-            case PLUS -> cart.compute(itemId, (k, v) -> isNull(v) ? 1 : v + 1);
-            case MINUS -> cart.compute(itemId, (k, v) -> (isNull(v) || v == 0) ? 0 : v - 1);
-            case DELETE -> cart.remove(itemId);
-            default -> Mono.error(new NotFoundException("Действия: " + action + " не существует"));
-        }*/
-
-        return Mono.empty();
+        return Mono.fromCallable(() -> {
+                    switch (action) {
+                        case PLUS:
+                            cart.compute(itemId, (k, v) -> (isNull(v)) ? 1 : v + 1);
+                            break;
+                        case MINUS:
+                            cart.compute(itemId, (k, v) -> (isNull(v) || v == 0) ? 0 : v - 1);
+                            break;
+                        case DELETE:
+                            cart.remove(itemId);
+                            break;
+                        default:
+                            throw new NotFoundException("Действия: " + action + " не существует");
+                    }
+                    return true; // просто для Void
+                })
+                .then();
     }
 
     @Override
     public Flux<CartItemDto> getAndResetCart() {
 
-/*        List<CartItemDto> cartItemDtos = cart.entrySet()
-                .stream()
-                .map(entry -> CartItemDto.builder()
-                        .itemId(entry.getKey())
-                        .count(entry.getValue())
-                        .build())
-                .toList();
+        return Mono.fromCallable(() -> {
+                    List<CartItemDto> result = cart.entrySet()
+                            .stream()
+                            .map(entry -> CartItemDto.builder()
+                                    .itemId(entry.getKey())
+                                    .count(entry.getValue())
+                                    .build())
+                            .toList();
 
-        cart.clear();
+                    cart.clear();
 
-        return Mono.just(cartItemDtos);*/
-        return Flux.empty();
+                    return result;
+                })
+                .flatMapMany(Flux::fromIterable);
     }
 
     private ItemDto convertItemWithCartCount(ItemDto item) {

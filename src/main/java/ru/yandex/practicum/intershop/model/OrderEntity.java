@@ -13,7 +13,6 @@ import java.util.List;
 
 @Getter
 @Setter
-//@Entity
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -22,14 +21,7 @@ import java.util.List;
 public class OrderEntity {
 
     @Id
-    //   @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "order_seq")
-    //   @SequenceGenerator(name = "order_seq", sequenceName = "SEQ_ORDER", allocationSize = 1)
     private Long id;
 
-    /*  @ManyToMany
-      @JoinTable(
-              name = "orders_items",
-              joinColumns = @JoinColumn(name = "order_id"),
-              inverseJoinColumns = @JoinColumn(name = "item_id"))*/
-    private List<ItemEntity> items;
+    private List<Long> itemIds;
 }

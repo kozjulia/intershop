@@ -1,11 +1,12 @@
 package ru.yandex.practicum.intershop.repository;
 
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import ru.yandex.practicum.intershop.model.ItemEntity;
 
 import java.util.List;
@@ -14,29 +15,28 @@ import java.util.List;
 public interface ItemRepository extends R2dbcRepository<ItemEntity, Long> {
 
     @Query("""
-            SELECT item
-            FROM ItemEntity item
-            WHERE :search IS NULL
-            OR item.title ILIKE %:search%
-            OR item.description ILIKE %:search%
+            SELECT * FROM items
+            WHERE (:search IS NULL OR title ILIKE '%' || :search || '%' OR description ILIKE '%' || :search || '%')
+            ORDER BY :sortColumn
+            LIMIT :pageSize OFFSET :offset
             """)
-    Flux<ItemEntity> searchAllPagingAndSorting(String search, Pageable pageable);
+    Flux<ItemEntity> searchAllPagingAndSorting(@Param("search") String search, @Param("sortColumn") String sortColumn, @Param("pageSize") Integer pageSize, @Param("offset") Integer offset);
 
     Flux<ItemEntity> findAllByIdIn(List<Long> itemIds);
 
-    @Modifying //(clearAutomatically = true)
+    @Modifying
     @Query("""
-            UPDATE ItemEntity item
-            SET item.imgPath = :imgPath
-            WHERE item.id = :itemId
+            UPDATE items
+            SET img_path = :imgPath
+            WHERE id = :itemId
             """)
-    void updateImagePath(Long itemId, String imgPath);
+    Mono<Void> updateImagePath(@Param("itemId") Long itemId, @Param("imgPath") String imgPath);
 
-    @Modifying //(clearAutomatically = true)
+    @Modifying
     @Query("""
-            UPDATE ItemEntity item
-            SET item.count = item.count - :count
-            WHERE item.id = :itemId
+            UPDATE items
+            SET count = count - :count
+            WHERE id = :itemId
             """)
-    void updateCountItem(Long itemId, Integer count);
+    Mono<Void> updateCountItem(@Param("itemId") Long itemId, @Param("count") Integer count);
 }

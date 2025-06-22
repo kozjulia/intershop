@@ -13,7 +13,6 @@ import java.math.BigDecimal;
 
 @Getter
 @Setter
-//@Entity
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -22,8 +21,6 @@ import java.math.BigDecimal;
 public class ItemEntity {
 
     @Id
-    // @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "item_seq")
-    //  @SequenceGenerator(name = "item_seq", sequenceName = "SEQ_ITEM", allocationSize = 1)
     private Long id;
 
     private String title;

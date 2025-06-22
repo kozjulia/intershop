@@ -6,21 +6,20 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.Immutable;
 import org.springframework.data.relational.core.mapping.Table;
 
 @Getter
 @Setter
-//@Entity
 @Builder
-//@Immutable
+@Immutable
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "orders_items")
-@EqualsAndHashCode(of = "id")
+@EqualsAndHashCode(of = {"orderId", "itemId"})
 public class OrderItemEntity {
 
-    //  @EmbeddedId
-    private OrderItemKey id;
-
-    Integer count;
+    private Long orderId;
+    private Long itemId;
+    private Integer count;
 }
