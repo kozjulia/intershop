@@ -7,9 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import ru.yandex.practicum.intershop.dto.OrderDto;
 import ru.yandex.practicum.intershop.service.OrderService;
 
 import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.REDIRECT_ORDERS;
@@ -19,6 +17,8 @@ import static ru.yandex.practicum.intershop.configuration.constants.TemplateCons
 @Controller
 @RequiredArgsConstructor
 public class OrderController {
+
+    private static final String PARAM_NEW_ORDER_IS_TRUE = "?newOrder=true";
 
     private final OrderService orderService;
 
@@ -30,9 +30,8 @@ public class OrderController {
     @PostMapping("/buy")
     public Mono<String> buyFromCart() {
 
-        Mono<Long> orderId = orderService.createOrder();
-
-        return Mono.just(REDIRECT_ORDERS + orderId + "?newOrder=true");
+        return orderService.createOrder()
+                .map(orderId -> REDIRECT_ORDERS + orderId + PARAM_NEW_ORDER_IS_TRUE);
     }
 
     /**
@@ -44,11 +43,10 @@ public class OrderController {
     @GetMapping("/orders")
     public Mono<String> getOrders(Model model) {
 
-        Flux<OrderDto> orders = orderService.findOrders();
-
-        model.addAttribute("orders", orders);
-
-        return Mono.just(TEMPLATE_ORDERS);
+        return orderService.findOrders()
+                .collectList()
+                .doOnNext(orders -> model.addAttribute("orders", orders))
+                .thenReturn(TEMPLATE_ORDERS);
     }
 
     /**
@@ -66,11 +64,11 @@ public class OrderController {
             Model model
     ) {
 
-        Mono<OrderDto> order = orderService.findOrderById(orderId);
-
-        model.addAttribute("order", order);
-        model.addAttribute("newOrder", newOrder);
-
-        return Mono.just(TEMPLATE_ORDER);
+        return orderService.findOrderById(orderId)
+                .flatMap(order -> {
+                    model.addAttribute("order", order);
+                    model.addAttribute("newOrder", newOrder);
+                    return Mono.just(TEMPLATE_ORDER);
+                });
     }
 }
