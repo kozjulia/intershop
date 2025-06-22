@@ -13,7 +13,6 @@ import ru.yandex.practicum.intershop.dto.OrderDto;
 import ru.yandex.practicum.intershop.service.OrderService;
 
 import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.REDIRECT_ORDERS;
-import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.SLASH;
 import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.TEMPLATE_ORDER;
 import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.TEMPLATE_ORDERS;
 
@@ -33,7 +32,7 @@ public class OrderController {
 
         Mono<Long> orderId = orderService.createOrder();
 
-        return Mono.just(REDIRECT_ORDERS + SLASH + orderId + "?newOrder=true");
+        return Mono.just(REDIRECT_ORDERS + orderId + "?newOrder=true");
     }
 
     /**

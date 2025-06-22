@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
 import ru.yandex.practicum.intershop.dto.Action;
-import ru.yandex.practicum.intershop.dto.ItemDto;
 import ru.yandex.practicum.intershop.service.CartService;
 import ru.yandex.practicum.intershop.service.ItemService;
 
@@ -20,7 +19,6 @@ import java.math.BigDecimal;
 
 import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.REDIRECT_ITEMS;
 import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.REDIRECT_MAIN_ITEMS;
-import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.SLASH;
 import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.TEMPLATE_ADD_ITEM;
 import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.TEMPLATE_ITEM;
 
@@ -44,10 +42,9 @@ public class ItemController {
             @PathVariable("id") Long itemId,
             Model model) {
 
-        Mono<ItemDto> item = itemService.getItemById(itemId);
-        model.addAttribute("item", item);
-
-        return Mono.just(TEMPLATE_ITEM);
+        return itemService.getItemById(itemId)
+                .doOnNext(item -> model.addAttribute("item", item))
+                .thenReturn(TEMPLATE_ITEM);
     }
 
     /**
@@ -82,9 +79,8 @@ public class ItemController {
             @RequestParam(required = false, defaultValue = "0,00") BigDecimal price
     ) {
 
-        Mono<Long> itemId = itemService.addItem(title, description, image, count, price);
-
-        return Mono.just(REDIRECT_ITEMS + SLASH + itemId);
+        return itemService.addItem(title, description, image, count, price)
+                .map(itemId -> REDIRECT_ITEMS + itemId);
     }
 
     /**
@@ -99,10 +95,9 @@ public class ItemController {
             @PathVariable("id") Long itemId,
             Model model
     ) {
-        Mono<ItemDto> item = itemService.getItemById(itemId);
-        model.addAttribute("item", item);
-
-        return Mono.just(TEMPLATE_ADD_ITEM);
+        return itemService.getItemById(itemId)
+                .doOnNext(item -> model.addAttribute("item", item))
+                .thenReturn(TEMPLATE_ADD_ITEM);
     }
 
     /**
@@ -126,9 +121,8 @@ public class ItemController {
             @RequestParam(required = false) BigDecimal price
     ) {
 
-        itemService.editItem(itemId, title, description, image, count, price);
-
-        return Mono.just(REDIRECT_ITEMS + SLASH + itemId);
+        return itemService.editItem(itemId, title, description, image, count, price)
+                .thenReturn(REDIRECT_ITEMS + itemId);
     }
 
     /**
@@ -139,9 +133,8 @@ public class ItemController {
      */
     @PostMapping(value = "/{id}/delete")
     public Mono<String> deleteItem(@PathVariable("id") Long itemId) {
-        itemService.deleteItem(itemId);
-
-        return Mono.just(REDIRECT_MAIN_ITEMS);
+        return itemService.deleteItem(itemId)
+                .thenReturn(REDIRECT_MAIN_ITEMS);
     }
 
     /**
@@ -156,8 +149,7 @@ public class ItemController {
             @PathVariable("id") Long itemId,
             @RequestParam String action
     ) {
-        cartService.changeItemCountInCartByItemId(itemId, Action.forName(action));
-
-        return Mono.just(REDIRECT_ITEMS + SLASH + itemId);
+        return cartService.changeItemCountInCartByItemId(itemId, Action.forName(action))
+                .thenReturn(REDIRECT_ITEMS + itemId);
     }
 }
