@@ -2,6 +2,7 @@ package ru.yandex.practicum.intershop.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import ru.yandex.practicum.intershop.dto.Action;
 import ru.yandex.practicum.intershop.dto.CartItemDto;
 import ru.yandex.practicum.intershop.dto.ItemDto;
@@ -9,7 +10,6 @@ import ru.yandex.practicum.intershop.service.CartService;
 import ru.yandex.practicum.intershop.service.ItemService;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -22,7 +22,7 @@ public class CartServiceImpl implements CartService {
     private final ItemService itemService;
 
     @Override
-    public Mono<List<ItemDto>> getCart() {
+    public Flux<ItemDto> getCart() {
 /*
         List<ItemDto> itemDtos = itemService.findAllItemsByIds(cart.keySet().stream().toList())
                 .stream()
@@ -30,7 +30,7 @@ public class CartServiceImpl implements CartService {
                 .toList();
 
         return Mono.just(itemDtos);*/
-        return Mono.empty();
+        return Flux.empty();
     }
 
     @Override
@@ -47,7 +47,7 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    public Mono<List<CartItemDto>> getAndResetCart() {
+    public Flux<CartItemDto> getAndResetCart() {
 
 /*        List<CartItemDto> cartItemDtos = cart.entrySet()
                 .stream()
@@ -60,7 +60,7 @@ public class CartServiceImpl implements CartService {
         cart.clear();
 
         return Mono.just(cartItemDtos);*/
-        return Mono.empty();
+        return Flux.empty();
     }
 
     private ItemDto convertItemWithCartCount(ItemDto item) {
