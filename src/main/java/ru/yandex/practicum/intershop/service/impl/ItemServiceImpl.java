@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -14,6 +15,7 @@ import ru.yandex.practicum.intershop.dto.ItemSort;
 import ru.yandex.practicum.intershop.exception.NotFoundException;
 import ru.yandex.practicum.intershop.mapper.ItemMapper;
 import ru.yandex.practicum.intershop.model.ItemEntity;
+import ru.yandex.practicum.intershop.model.SequenceGenerator;
 import ru.yandex.practicum.intershop.repository.ItemRepository;
 import ru.yandex.practicum.intershop.service.ItemService;
 
@@ -35,6 +37,7 @@ public class ItemServiceImpl implements ItemService {
 
     private final ItemMapper itemMapper;
     private final ItemRepository itemRepository;
+    private final SequenceGenerator sequenceGenerator;
 
     @Value("${intershop.path-for-upload-image}")
     private String pathForUploadImage;
@@ -80,6 +83,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
+    @Transactional
     public Mono<Long> addItem(String title, String description, MultipartFile image, Integer count, BigDecimal price) {
 
         ItemEntity item = ItemEntity.builder()
@@ -89,7 +93,11 @@ public class ItemServiceImpl implements ItemService {
                 .price(price)
                 .build();
 
-        return itemRepository.save(item)
+        return sequenceGenerator.generateOrderId()
+                .flatMap(id -> {
+                    item.setId(id);
+                    return itemRepository.save(item);
+                })
                 .flatMap(savedItem -> {
                     Long itemId = savedItem.getId();
 
@@ -108,6 +116,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
+    @Transactional
     public Mono<Void> editItem(Long itemId, String title, String description, MultipartFile image, Integer count, BigDecimal price) {
 
         return itemRepository.findById(itemId)
@@ -145,12 +154,14 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
+    @Transactional
     public Mono<Void> deleteItem(Long itemId) {
 
         return itemRepository.deleteById(itemId);
     }
 
     @Override
+    @Transactional
     public Mono<Void> updateItem(CartItemDto cartItemDto) {
 
         return itemRepository.updateCountItem(cartItemDto.getItemId(), cartItemDto.getCount());

@@ -2,6 +2,7 @@ package ru.yandex.practicum.intershop.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import ru.yandex.practicum.intershop.dto.ItemDto;
@@ -10,6 +11,7 @@ import ru.yandex.practicum.intershop.mapper.ItemMapper;
 import ru.yandex.practicum.intershop.model.ItemEntity;
 import ru.yandex.practicum.intershop.model.OrderEntity;
 import ru.yandex.practicum.intershop.model.OrderItemEntity;
+import ru.yandex.practicum.intershop.model.SequenceGenerator;
 import ru.yandex.practicum.intershop.repository.ItemRepository;
 import ru.yandex.practicum.intershop.repository.OrderItemRepository;
 import ru.yandex.practicum.intershop.repository.OrderRepository;
@@ -31,30 +33,38 @@ public class OrderServiceImpl implements OrderService {
     private final ItemService itemService;
     private final ItemRepository itemRepository;
     private final OrderRepository orderRepository;
+    private final SequenceGenerator sequenceGenerator;
     private final OrderItemRepository orderItemRepository;
 
     @Override
+    @Transactional
     public Mono<Long> createOrder() {
 
         return cartService.getAndResetCart()
                 .collectList()
                 .filter(items -> !items.isEmpty())
-                .flatMap(items -> orderRepository.save(new OrderEntity())
-                        .flatMap(orderEntity -> {
-                            Long orderId = orderEntity.getId();
+                .flatMap(items ->
+                        sequenceGenerator.generateOrderId()
+                                .flatMap(id -> {
+                                    OrderEntity order = new OrderEntity();
+                                    order.setId(id);
+                                    return orderRepository.save(order);
+                                })
+                                .flatMap(orderEntity -> {
+                                    Long orderId = orderEntity.getId();
 
-                            Flux<OrderItemEntity> orderItems = Flux.fromIterable(items)
-                                    .map(item -> OrderItemEntity.builder()
-                                            .orderId(orderId)
-                                            .itemId(item.getItemId())
-                                            .count(item.getCount())
-                                            .build());
+                                    Flux<OrderItemEntity> orderItems = Flux.fromIterable(items)
+                                            .map(item -> OrderItemEntity.builder()
+                                                    .orderId(orderId)
+                                                    .itemId(item.getItemId())
+                                                    .count(item.getCount())
+                                                    .build());
 
-                            return orderItemRepository.saveAllAndFlush(orderItems)
-                                    .thenMany(Flux.fromIterable(items))
-                                    .flatMap(itemService::updateItem)
-                                    .then(Mono.just(orderId));
-                        }));
+                                    return orderItemRepository.saveAllAndFlush(orderItems)
+                                            .thenMany(Flux.fromIterable(items))
+                                            .flatMap(itemService::updateItem)
+                                            .then(Mono.just(orderId));
+                                }));
     }
 
 
@@ -85,7 +95,7 @@ public class OrderServiceImpl implements OrderService {
 
                             return itemRepository.findAllByIdIn(itemIds)
                                     .map(itemMapper::toItemDto)
-                                    .map(itemDto -> getUpdatedItem(itemDto, itemCountMap))
+                                    .map(dto -> getUpdatedItem(dto, itemCountMap))
                                     .collectList()
                                     .map(itemDtos -> OrderDto.builder()
                                             .id(order.getId())
