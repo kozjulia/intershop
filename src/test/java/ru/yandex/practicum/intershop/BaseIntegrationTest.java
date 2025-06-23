@@ -1,15 +1,15 @@
 package ru.yandex.practicum.intershop;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.jdbc.Sql;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.reactive.server.WebTestClient;
 
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
-@AutoConfigureMockMvc
+@AutoConfigureWebTestClient
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @ContextConfiguration(
         classes = IntershopApplication.class,
@@ -19,5 +19,5 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 public class BaseIntegrationTest {
 
     @Autowired
-    protected MockMvc mockMvc;
+    protected WebTestClient webTestClient;
 }

@@ -2,14 +2,12 @@ package ru.yandex.practicum.intershop.controller;
 
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.client.MockMvcWebTestClient;
 import ru.yandex.practicum.intershop.BaseIntegrationTest;
 
 import static org.apache.logging.log4j.util.Strings.EMPTY;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static ru.yandex.practicum.intershop.TestConstants.ITEM_ID;
 
@@ -18,20 +16,39 @@ class MainControllerTest extends BaseIntegrationTest {
     @Test
     @SneakyThrows
     void getMainPage_shouldReturnHtmlWithMainTest() {
-        mockMvc.perform(get("/main/items")
-                        .param("search", EMPTY)
-                        .param("sort", "NO"))
-                .andExpect(status().isOk())
+        var result = webTestClient
+                .get()
+                .uri(uriBuilder -> uriBuilder.path("/main/items")
+                        .queryParam("search", EMPTY)
+                        .queryParam("sort", "NO")
+                        .build())
+                .accept(MediaType.TEXT_HTML)
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_HTML)
+                .expectBody()
+                .returnResult();
+
+
+        MockMvcWebTestClient.resultActionsFor(result)
                 .andExpect(view().name("main"))
-                .andExpect(model().attributeExists("items", "search", "sort", "paging"));
+                .andExpect(model().attributeExists("items"))
+                .andExpect(model().attributeExists("search"))
+                .andExpect(model().attributeExists("sort"))
+                .andExpect(model().attributeExists("paging"));
     }
 
     @Test
     @SneakyThrows
     void changeItemCountInCart_shouldRedirectTest() {
-        mockMvc.perform(post("/main/items/" + ITEM_ID)
-                        .param("action", "plus"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/main/items"));
+        webTestClient
+                .post()
+                .uri(uriBuilder -> uriBuilder.path("/main/items/" + ITEM_ID)
+                        .queryParam("action", "plus")
+                        .build())
+                .accept(MediaType.TEXT_HTML)
+                .exchange()
+                .expectStatus().is3xxRedirection()
+                .expectHeader().location("/main/items");
     }
 }

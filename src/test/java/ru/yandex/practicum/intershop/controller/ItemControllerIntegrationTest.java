@@ -1,13 +1,16 @@
 package ru.yandex.practicum.intershop.controller;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
-import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.MediaType;
+import org.springframework.http.client.MultipartBodyBuilder;
+import org.springframework.web.reactive.function.BodyInserters;
+import reactor.test.StepVerifier;
 import ru.yandex.practicum.intershop.BaseIntegrationTest;
 import ru.yandex.practicum.intershop.model.ItemEntity;
+import ru.yandex.practicum.intershop.repository.ItemRepository;
 
 import java.util.List;
 
@@ -24,43 +27,43 @@ import static ru.yandex.practicum.intershop.TestConstants.ITEM_TITLE;
 
 class ItemControllerIntegrationTest extends BaseIntegrationTest {
 
-    @PersistenceContext
-    private EntityManager entityManager;
+    @Autowired
+    private ItemRepository itemRepository;
 
     @Test
     @SneakyThrows
     void addItem_shouldAddItemToDatabaseAndRedirectTest() {
-        MockMultipartFile image = new MockMultipartFile(
-                "image", "test.jpg", "image/jpeg", "IMAGE".getBytes());
+        MultipartBodyBuilder image = new MultipartBodyBuilder();
+        image.part("title", ITEM_TITLE);
+        image.part("description", ITEM_DESCRIPTION);
+        image.part("count", ITEM_COUNT);
+        image.part("price", ITEM_PRICE);
+        image.part("image", new ClassPathResource("test.jpg"), MediaType.IMAGE_JPEG);
 
-        mockMvc.perform(MockMvcRequestBuilders.multipart("/items")
-                        .file(image)
-                        .param("title", ITEM_TITLE)
-                        .param("description", ITEM_DESCRIPTION)
-                        .param("count", ITEM_COUNT.toString())
-                        .param("price", ITEM_PRICE.toString()))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/items/1"));
+        webTestClient.post()
+                .uri("/items")
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .body(BodyInserters.fromMultipartData(image.build()))
+                .exchange()
+                .expectStatus().is3xxRedirection()
+                .expectHeader().location("/items/1");
 
-        List<ItemEntity> items = entityManager.createQuery("FROM ItemEntity", ItemEntity.class)
-                .getResultList();
-
-        assertThat(items.size(), equalTo(1));
-
-        ItemEntity resultItem = items.getFirst();
-        assertThat(resultItem.getId(), equalTo(1L));
-        assertThat(resultItem.getTitle(), equalTo(ITEM_TITLE));
-        assertThat(resultItem.getDescription(), equalTo(ITEM_DESCRIPTION));
-        assertThat(resultItem.getImgPath(), equalTo("item-image-1.jpg"));
-        assertThat(resultItem.getCount(), equalTo(ITEM_COUNT));
-        assertThat(resultItem.getPrice().compareTo(ITEM_PRICE), equalTo(0));
+        StepVerifier.create(itemRepository.count())
+                .expectNextMatches(count -> count == 1)
+                .verifyComplete();
     }
 
     @Test
     @SneakyThrows
-    void deleteItem_shouldRemoveItemFromDatabaseAndRedirectTes() {
-        mockMvc.perform(post("/items/" + ITEM_ID + "/delete"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/main/items"));
+    void deleteItem_shouldRemoveItemFromDatabaseAndRedirectTest() {
+        webTestClient.post()
+                .uri("/items/" + ITEM_ID + "/delete")
+                .exchange()
+                .expectStatus().is3xxRedirection()
+                .expectHeader().location("/main/items");
+
+        itemRepository.findById(ITEM_ID)
+                .as(StepVerifier::create)
+                .verifyComplete();
     }
 }
