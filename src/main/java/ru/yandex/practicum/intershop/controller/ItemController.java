@@ -9,11 +9,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.codec.multipart.FilePart;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import ru.yandex.practicum.intershop.dto.Action;
-import ru.yandex.practicum.intershop.dto.ItemDto;
 import ru.yandex.practicum.intershop.service.CartService;
 import ru.yandex.practicum.intershop.service.ItemService;
+import org.springframework.core.io.buffer.DataBufferUtils;
 
 import java.math.BigDecimal;
 
@@ -39,14 +41,10 @@ public class ItemController {
      * @return Шаблон "item.html"
      */
     @GetMapping("/{id}")
-    public String getItemById(
-            @PathVariable("id") Long itemId,
-            Model model) {
-
-        ItemDto item = itemService.getItemById(itemId);
-        model.addAttribute("item", item);
-
-        return TEMPLATE_ITEM;
+    public Mono<String> getItemById(@PathVariable("id") Long itemId, Model model) {
+        return itemService.getItemById(itemId)
+                .doOnNext(item -> model.addAttribute("item", item))
+                .thenReturn(TEMPLATE_ITEM);
     }
 
     /**
@@ -56,10 +54,9 @@ public class ItemController {
      * @return Шаблон "add-item.html"
      */
     @GetMapping("/add")
-    public String getAddingForm(Model model) {
+    public Mono<String> getAddingForm(Model model) {
         model.addAttribute("item", null);
-
-        return TEMPLATE_ADD_ITEM;
+        return Mono.just(TEMPLATE_ADD_ITEM);
     }
 
     /**
@@ -73,17 +70,15 @@ public class ItemController {
      * @return Редирект на созданный "/items/{id}"
      */
     @PostMapping
-    public String addItem(
+    public Mono<String> addItem(
             @RequestParam String title,
             @RequestParam(required = false) String description,
-            @RequestPart MultipartFile image,
+            @RequestPart(required = false) FilePart image,
             @RequestParam(required = false, defaultValue = "0") Integer count,
-            @RequestParam(required = false, defaultValue = "0,00") BigDecimal price
+            @RequestParam(required = false, defaultValue = "0.00") BigDecimal price
     ) {
-
-        Long itemId = itemService.addItem(title, description, image, count, price);
-
-        return REDIRECT_ITEMS + SLASH + itemId;
+        return itemService.addItem(title, description, image, count, price)
+                .map(itemId -> REDIRECT_ITEMS + SLASH + itemId);
     }
 
     /**
@@ -94,14 +89,10 @@ public class ItemController {
      * @return Редирект на форму редактирования товара "add-item.html"
      */
     @GetMapping("/{id}/edit")
-    public String getEditingForm(
-            @PathVariable("id") Long itemId,
-            Model model
-    ) {
-        ItemDto item = itemService.getItemById(itemId);
-        model.addAttribute("item", item);
-
-        return TEMPLATE_ADD_ITEM;
+    public Mono<String> getEditingForm(@PathVariable("id") Long itemId, Model model) {
+        return itemService.getItemById(itemId)
+                .doOnNext(item -> model.addAttribute("item", item))
+                .thenReturn(TEMPLATE_ADD_ITEM);
     }
 
     /**
@@ -116,18 +107,16 @@ public class ItemController {
      * @return Редирект на отредактированный "/items/{id}"
      */
     @PostMapping("{id}/edit")
-    public String editItem(
+    public Mono<String> editItem(
             @PathVariable("id") Long itemId,
             @RequestParam String title,
             @RequestParam(required = false) String description,
-            @RequestPart(required = false) MultipartFile image,
+            @RequestPart(required = false) FilePart image,
             @RequestParam(required = false) Integer count,
             @RequestParam(required = false) BigDecimal price
     ) {
-
-        itemService.editItem(itemId, title, description, image, count, price);
-
-        return REDIRECT_ITEMS + SLASH + itemId;
+        return itemService.editItem(itemId, title, description, image, count, price)
+                .thenReturn(REDIRECT_ITEMS + SLASH + itemId);
     }
 
     /**
@@ -137,10 +126,9 @@ public class ItemController {
      * @return Редирект на "/main/items"
      */
     @PostMapping(value = "/{id}/delete")
-    public String deleteItem(@PathVariable("id") Long itemId) {
-        itemService.deleteItem(itemId);
-
-        return REDIRECT_MAIN_ITEMS;
+    public Mono<String> deleteItem(@PathVariable("id") Long itemId) {
+        return itemService.deleteItem(itemId)
+                .thenReturn(REDIRECT_MAIN_ITEMS);
     }
 
     /**
@@ -151,12 +139,38 @@ public class ItemController {
      * @return Редирект на "/items/{id}"
      */
     @PostMapping("{id}")
-    public String changeItemCountInCart(
+    public Mono<String> changeItemCountInCart(
             @PathVariable("id") Long itemId,
             @RequestParam String action
     ) {
-        cartService.changeItemCountInCartByItemId(itemId, Action.forName(action));
+        return Mono.fromRunnable(() -> cartService.changeItemCountInCartByItemId(itemId, Action.forName(action)))
+                .thenReturn(REDIRECT_ITEMS + SLASH + itemId);
+    }
 
-        return REDIRECT_ITEMS + SLASH + itemId;
+    @GetMapping("/import")
+    public Mono<String> getImportForm() {
+        return Mono.just("import-items");
+    }
+
+    @PostMapping("/import")
+    public Mono<String> importItems(@RequestPart("file") FilePart filePart) {
+        return DataBufferUtils.join(filePart.content())
+                .flatMap(dataBuffer -> {
+                    byte[] bytes = new byte[dataBuffer.readableByteCount()];
+                    dataBuffer.read(bytes);
+                    DataBufferUtils.release(dataBuffer);
+                    String content = new String(bytes);
+                    return Flux.fromArray(content.split("\r?\n"))
+                            .map(line -> line.split(","))
+                            .filter(parts -> parts.length >= 4)
+                            .flatMap(parts -> {
+                                String title = parts[0].trim();
+                                String description = parts[1].trim();
+                                Integer count = Integer.parseInt(parts[2].trim());
+                                java.math.BigDecimal price = new java.math.BigDecimal(parts[3].trim());
+                                return itemService.addItem(title, description, null, count, price).then();
+                            })
+                            .then(Mono.just("redirect:/main/items"));
+                });
     }
 }

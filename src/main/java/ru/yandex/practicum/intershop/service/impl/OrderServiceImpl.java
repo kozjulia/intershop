@@ -3,12 +3,11 @@ package ru.yandex.practicum.intershop.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.yandex.practicum.intershop.dto.CartItemDto;
 import ru.yandex.practicum.intershop.dto.ItemDto;
 import ru.yandex.practicum.intershop.dto.OrderDto;
 import ru.yandex.practicum.intershop.mapper.ItemMapper;
-import ru.yandex.practicum.intershop.model.ItemEntity;
-import ru.yandex.practicum.intershop.model.OrderEntity;
+import ru.yandex.practicum.intershop.model.Items;
+import ru.yandex.practicum.intershop.model.Orders;
 import ru.yandex.practicum.intershop.model.OrderItemEntity;
 import ru.yandex.practicum.intershop.model.OrderItemKey;
 import ru.yandex.practicum.intershop.repository.ItemRepository;
@@ -17,6 +16,8 @@ import ru.yandex.practicum.intershop.repository.OrderRepository;
 import ru.yandex.practicum.intershop.service.CartService;
 import ru.yandex.practicum.intershop.service.ItemService;
 import ru.yandex.practicum.intershop.service.OrderService;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 
@@ -33,67 +34,64 @@ public class OrderServiceImpl implements OrderService {
     private final OrderItemRepository orderItemRepository;
 
     @Override
-    @Transactional
-    public Long createOrder() {
-
-        List<CartItemDto> items = cartService.getAndResetCart();
-
-        Long orderId = orderRepository.saveAndFlush(new OrderEntity())
-                .getId();
-
-        List<OrderItemEntity> orderItemEntities = items.stream()
-                .map(item -> OrderItemEntity.builder()
-                        .id(OrderItemKey.builder()
-                                .order(orderRepository.getReferenceById(orderId))
-                                .item(itemRepository.getReferenceById(item.getItemId()))
-                                .build())
-                        .count(item.getCount())
-                        .build())
-                .toList();
-
-        orderItemRepository.saveAllAndFlush(orderItemEntities);
-
-        items.forEach(itemService::updateItem);
-
-        return orderId;
+    public Mono<Long> createOrder() {
+        return cartService.getAndResetCart().collectList()
+                .flatMap(items -> orderRepository.save(Orders.builder().build())
+                        .flatMap(order -> {
+                            Flux<OrderItemEntity> orderItemsFlux = Flux.fromIterable(items)
+                                    .flatMap(item -> itemRepository.findById(item.getItemId())
+                                            .map(itemEntity -> OrderItemEntity.builder()
+                                                    .id(OrderItemKey.builder()
+                                                            .order(order)
+                                                            .item(itemEntity)
+                                                            .build())
+                                                    .count(item.getCount())
+                                                    .build()));
+                            return orderItemsFlux.collectList()
+                                    .flatMap(orderItemEntities -> orderItemRepository.saveAll(orderItemEntities).collectList())
+                                    .thenMany(Flux.fromIterable(items))
+                                    .flatMap(itemService::updateItem)
+                                    .then(Mono.just(order.getId()));
+                        }));
     }
 
     @Override
-    public List<OrderDto> findOrders() {
-
-        List<OrderItemEntity> orderItems = orderItemRepository.findAll();
-
-        List<OrderEntity> orders = orderRepository.findAll();
-        return orders.stream()
-                .map(order -> OrderDto.builder()
-                        .id(order.getId())
-                        .items(convertToItemDtos(order.getItems(), order.getId(), orderItems))
-                        .build())
-                .toList();
+    public Flux<OrderDto> findOrders() {
+        return orderRepository.findAll()
+                .flatMap(order -> orderItemRepository.findAll()
+                        .filter(orderItem -> orderItem.getId().getOrder().getId().equals(order.getId()))
+                        .collectList()
+                        .flatMap(orderItems -> {
+                            List<Items> items = order.getItems();
+                            List<ItemDto> itemDtos = itemMapper.toItemDtos(items);
+                            List<ItemDto> updatedItemDtos = itemDtos.stream()
+                                    .map(itemDto -> getUpdatedItem(itemDto, order.getId(), orderItems))
+                                    .toList();
+                            return Mono.just(OrderDto.builder()
+                                    .id(order.getId())
+                                    .items(updatedItemDtos)
+                                    .build());
+                        }));
     }
 
     @Override
-    public OrderDto findOrderById(Long orderId) {
-
-        List<OrderItemEntity> orderItems = orderItemRepository.findAll()
-                .stream()
-                .filter(orderItem -> orderItem.getId().getOrder().getId().equals(orderId))
-                .toList();
-
+    public Mono<OrderDto> findOrderById(Long orderId) {
         return orderRepository.findById(orderId)
-                .map(order -> OrderDto.builder()
-                        .id(orderId)
-                        .items(convertToItemDtos(order.getItems(), orderId, orderItems))
-                        .build())
-                .orElse(new OrderDto());
-    }
-
-    private List<ItemDto> convertToItemDtos(List<ItemEntity> items, Long orderId, List<OrderItemEntity> orderItems) {
-        List<ItemDto> itemDtos = itemMapper.toItemDtos(items);
-        return itemDtos
-                .stream()
-                .map(itemDto -> getUpdatedItem(itemDto, orderId, orderItems))
-                .toList();
+                .flatMap(order -> orderItemRepository.findAll()
+                        .filter(orderItem -> orderItem.getId().getOrder().getId().equals(orderId))
+                        .collectList()
+                        .flatMap(orderItems -> {
+                            List<Items> items = order.getItems();
+                            List<ItemDto> itemDtos = itemMapper.toItemDtos(items);
+                            List<ItemDto> updatedItemDtos = itemDtos.stream()
+                                    .map(itemDto -> getUpdatedItem(itemDto, orderId, orderItems))
+                                    .toList();
+                            return Mono.just(OrderDto.builder()
+                                    .id(orderId)
+                                    .items(updatedItemDtos)
+                                    .build());
+                        })
+                ).switchIfEmpty(Mono.just(new OrderDto()));
     }
 
     private ItemDto getUpdatedItem(ItemDto itemDto, Long orderId, List<OrderItemEntity> orderItems) {
@@ -103,7 +101,6 @@ public class OrderServiceImpl implements OrderService {
                 .map(OrderItemEntity::getCount)
                 .findFirst()
                 .orElse(0);
-
         itemDto.setCount(orderCount);
         return itemDto;
     }

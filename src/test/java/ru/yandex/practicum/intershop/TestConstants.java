@@ -1,7 +1,7 @@
 package ru.yandex.practicum.intershop;
 
 import lombok.experimental.UtilityClass;
-import ru.yandex.practicum.intershop.model.ItemEntity;
+import ru.yandex.practicum.intershop.model.Items;
 
 import java.math.BigDecimal;
 
@@ -15,7 +15,7 @@ public class TestConstants {
     public static final Integer ITEM_COUNT = 5;
     public static final BigDecimal ITEM_PRICE = BigDecimal.valueOf(550.50);
 
-    public static final ItemEntity ITEM_ENTITY = ItemEntity.builder()
+    public static final Items ITEM_ENTITY = Items.builder()
             .id(ITEM_ID)
             .title(ITEM_TITLE)
             .description(ITEM_DESCRIPTION)

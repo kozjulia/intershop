@@ -14,6 +14,7 @@ import ru.yandex.practicum.intershop.dto.PagingDto;
 import ru.yandex.practicum.intershop.dto.ItemSort;
 import ru.yandex.practicum.intershop.service.CartService;
 import ru.yandex.practicum.intershop.service.ItemService;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 
@@ -39,22 +40,22 @@ public class MainController {
      * @return Шаблон "main.html"
      */
     @GetMapping
-    public String getMainPage(
+    public Mono<String> getMainPage(
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "NO") ItemSort sort,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize,
             @RequestParam(required = false, defaultValue = "1") Integer pageNumber,
             Model model
     ) {
-
-        List<ItemDto> items = itemService.findAllItemsPagingAndSorting(search, sort, pageSize, pageNumber);
-
-        model.addAttribute("items", items);
-        model.addAttribute("search", search);
-        model.addAttribute("sort", sort);
-        model.addAttribute("paging", new PagingDto(pageNumber, pageSize, items.size()));
-
-        return TEMPLATE_MAIN;
+        return itemService.findAllItemsPagingAndSorting(search, sort, pageSize, pageNumber)
+                .collectList()
+                .doOnNext(items -> {
+                    model.addAttribute("items", items);
+                    model.addAttribute("search", search);
+                    model.addAttribute("sort", sort);
+                    model.addAttribute("paging", new PagingDto(pageNumber, pageSize, items.size()));
+                })
+                .thenReturn(TEMPLATE_MAIN);
     }
 
     /**
@@ -65,12 +66,11 @@ public class MainController {
      * @return Редирект на "/main/items"
      */
     @PostMapping("{id}")
-    public String changeItemCountInCart(
+    public Mono<String> changeItemCountInCart(
             @PathVariable("id") Long itemId,
             @RequestParam String action
     ) {
-        cartService.changeItemCountInCartByItemId(itemId, Action.forName(action));
-
-        return REDIRECT_MAIN_ITEMS;
+        return Mono.fromRunnable(() -> cartService.changeItemCountInCartByItemId(itemId, Action.forName(action)))
+                .thenReturn(REDIRECT_MAIN_ITEMS);
     }
 }

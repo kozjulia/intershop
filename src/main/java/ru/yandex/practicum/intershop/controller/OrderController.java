@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import ru.yandex.practicum.intershop.dto.OrderDto;
 import ru.yandex.practicum.intershop.service.OrderService;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 
@@ -29,11 +30,9 @@ public class OrderController {
      * @return Редирект на "/orders/{id}?newOrder=true"
      */
     @PostMapping("/buy")
-    public String buyFromCart() {
-
-        Long orderId = orderService.createOrder();
-
-        return REDIRECT_ORDERS + SLASH + orderId + "?newOrder=true";
+    public Mono<String> buyFromCart() {
+        return orderService.createOrder()
+                .map(orderId -> REDIRECT_ORDERS + SLASH + orderId + "?newOrder=true");
     }
 
     /**
@@ -43,13 +42,10 @@ public class OrderController {
      * @return Шаблон "orders.html"
      */
     @GetMapping("/orders")
-    public String getOrders(Model model) {
-
-        List<OrderDto> orders = orderService.findOrders();
-
-        model.addAttribute("orders", orders);
-
-        return TEMPLATE_ORDERS;
+    public Mono<String> getOrders(Model model) {
+        return orderService.findOrders().collectList()
+                .doOnNext(orders -> model.addAttribute("orders", orders))
+                .thenReturn(TEMPLATE_ORDERS);
     }
 
     /**
@@ -61,17 +57,16 @@ public class OrderController {
      * @return Шаблон "order.html"
      */
     @GetMapping("/orders/{id}")
-    public String getOrderById(
+    public Mono<String> getOrderById(
             @PathVariable("id") Long orderId,
             @RequestParam(required = false, defaultValue = "false") Boolean newOrder,
             Model model
     ) {
-
-        OrderDto order = orderService.findOrderById(orderId);
-
-        model.addAttribute("order", order);
-        model.addAttribute("newOrder", newOrder);
-
-        return TEMPLATE_ORDER;
+        return orderService.findOrderById(orderId)
+                .doOnNext(order -> {
+                    model.addAttribute("order", order);
+                    model.addAttribute("newOrder", newOrder);
+                })
+                .thenReturn(TEMPLATE_ORDER);
     }
 }

@@ -1,10 +1,10 @@
 package ru.yandex.practicum.intershop.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import org.springframework.stereotype.Repository;
-import ru.yandex.practicum.intershop.model.OrderEntity;
+import ru.yandex.practicum.intershop.model.Orders;
 
 @Repository
-public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
+public interface OrderRepository extends ReactiveCrudRepository<Orders, Long> {
 
 }

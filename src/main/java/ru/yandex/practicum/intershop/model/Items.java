@@ -11,11 +11,15 @@ import org.springframework.data.relational.core.mapping.Table;
 @Getter
 @Setter
 @Builder
-@Table("order_item")
+@Table("items")
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
-public class OrderItemEntity {
-    private OrderItemKey id;
-    Integer count;
+public class Items {
+    private Long id;
+    private String title;
+    private String description;
+    private String imgPath;
+    private Integer count;
+    private java.math.BigDecimal price;
 }

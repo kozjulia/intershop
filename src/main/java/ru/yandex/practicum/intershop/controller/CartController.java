@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import ru.yandex.practicum.intershop.dto.Action;
 import ru.yandex.practicum.intershop.dto.ItemDto;
 import ru.yandex.practicum.intershop.service.CartService;
+import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -32,18 +33,18 @@ public class CartController {
      * @return Шаблон "cart.html"
      */
     @GetMapping
-    public String getCart(Model model) {
-
-        List<ItemDto> items = cartService.getCart();
-        BigDecimal total = items.stream()
-                .map(item -> item.getPrice().multiply(new BigDecimal(item.getCount())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        model.addAttribute("items", items);
-        model.addAttribute("total", total);
-        model.addAttribute("empty", items.isEmpty());
-
-        return TEMPLATE_CART;
+    public Mono<String> getCart(Model model) {
+        return cartService.getCart()
+                .collectList()
+                .doOnNext(items -> {
+                    java.math.BigDecimal total = items.stream()
+                            .map(item -> item.getPrice().multiply(new java.math.BigDecimal(item.getCount())))
+                            .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+                    model.addAttribute("items", items);
+                    model.addAttribute("total", total);
+                    model.addAttribute("empty", items.isEmpty());
+                })
+                .thenReturn(TEMPLATE_CART);
     }
 
     /**
@@ -54,12 +55,11 @@ public class CartController {
      * @return Редирект на "/cart/items"
      */
     @PostMapping("{id}")
-    public String changeItemCountInCart(
+    public Mono<String> changeItemCountInCart(
             @PathVariable("id") Long itemId,
             @RequestParam String action
     ) {
-        cartService.changeItemCountInCartByItemId(itemId, Action.forName(action));
-
-        return REDIRECT_CART_ITEMS;
+        return cartService.changeItemCountInCartByItemId(itemId, Action.forName(action))
+                .thenReturn(REDIRECT_CART_ITEMS);
     }
 }

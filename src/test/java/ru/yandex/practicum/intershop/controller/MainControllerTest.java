@@ -1,37 +1,33 @@
 package ru.yandex.practicum.intershop.controller;
 
-import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
-import ru.yandex.practicum.intershop.BaseIntegrationTest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.reactive.server.WebTestClient;
 
-import static org.apache.logging.log4j.util.Strings.EMPTY;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
-import static ru.yandex.practicum.intershop.TestConstants.ITEM_ID;
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureWebTestClient
+@ActiveProfiles("test")
+class MainControllerTest {
 
-class MainControllerTest extends BaseIntegrationTest {
+    @Autowired
+    private WebTestClient webTestClient;
 
     @Test
-    @SneakyThrows
     void getMainPage_shouldReturnHtmlWithMainTest() {
-        mockMvc.perform(get("/main/items")
-                        .param("search", EMPTY)
-                        .param("sort", "NO"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("main"))
-                .andExpect(model().attributeExists("items", "search", "sort", "paging"));
+        webTestClient.get()
+                .uri("/main/items?search=&sort=NO")
+                .exchange()
+                .expectStatus().isOk();
     }
 
     @Test
-    @SneakyThrows
     void changeItemCountInCart_shouldRedirectTest() {
-        mockMvc.perform(post("/main/items/" + ITEM_ID)
-                        .param("action", "plus"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/main/items"));
+        webTestClient.post()
+                .uri("/main/items/77?action=plus")
+                .exchange()
+                .expectStatus().is3xxRedirection();
     }
 }

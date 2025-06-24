@@ -2,6 +2,7 @@ package ru.yandex.practicum.intershop.controller;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import reactor.core.publisher.Mono;
 
 import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.REDIRECT_MAIN_ITEMS;
 
@@ -14,7 +15,7 @@ public class RedirectController {
      * @return Шаблон "main.html"
      */
     @GetMapping("/")
-    public String redirect() {
-        return REDIRECT_MAIN_ITEMS;
+    public Mono<String> redirect() {
+        return Mono.just(REDIRECT_MAIN_ITEMS);
     }
 }

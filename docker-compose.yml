@@ -12,6 +12,7 @@ services:
     restart: on-failure
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://intershop-db:5432/intershop
+      - SPRING_R2DBC_URL=r2dbc:postgresql://intershop-db:5432/intershop
       - SPRING_DATASOURCE_USER=intershop
       - SPRING_DATASOURCE_PASSWORD=intershop
 

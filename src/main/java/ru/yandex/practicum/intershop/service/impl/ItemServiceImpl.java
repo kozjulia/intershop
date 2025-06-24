@@ -3,30 +3,25 @@ package ru.yandex.practicum.intershop.service.impl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.codec.multipart.FilePart;
 import ru.yandex.practicum.intershop.dto.CartItemDto;
 import ru.yandex.practicum.intershop.dto.ItemDto;
 import ru.yandex.practicum.intershop.dto.ItemSort;
-import ru.yandex.practicum.intershop.exception.NotFoundException;
 import ru.yandex.practicum.intershop.mapper.ItemMapper;
-import ru.yandex.practicum.intershop.model.ItemEntity;
+import ru.yandex.practicum.intershop.model.Items;
 import ru.yandex.practicum.intershop.repository.ItemRepository;
 import ru.yandex.practicum.intershop.service.ItemService;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import static org.apache.commons.io.FilenameUtils.getExtension;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Slf4j
 @Service
@@ -43,132 +38,116 @@ public class ItemServiceImpl implements ItemService {
     private String pathForUploadImage;
 
     @Override
-    public ItemDto getItemById(Long itemId) {
-
+    public Mono<ItemDto> getItemById(Long itemId) {
         return itemRepository.findById(itemId)
-                .map(itemMapper::toItemDto)
-                .orElse(null);
+                .map(itemMapper::toItemDto);
     }
 
     @Override
-    public byte[] getItemImageByImagePath(String imagePath) {
-
-        try {
-            Path path = Path.of(pathForUploadImage).resolve(imagePath);
-
-            return Files.readAllBytes(path);
-        } catch (IOException e) {
-            log.error("Фото для товара с путем: {} не получилось загрузить", imagePath);
+    public Mono<byte[]> getItemImageByImagePath(String imagePath) {
+        Path path = Path.of(pathForUploadImage).resolve(imagePath);
+        if (Files.exists(path)) {
+            return Mono.fromCallable(() -> Files.readAllBytes(path));
         }
-
-        return new byte[0];
+        return Mono.empty();
     }
 
     @Override
-    public List<ItemDto> findAllItemsPagingAndSorting(String search, ItemSort itemSort, Integer pageSize, Integer pageNumber) {
-
-        Pageable page = resolvePageable(itemSort, pageSize, pageNumber - 1);
-        Page<ItemEntity> items = itemRepository.searchAllPagingAndSorting(search, page);
-
-        return items.getContent()
-                .stream()
-                .map(itemMapper::toItemDto)
-                .toList();
+    public Flux<ItemDto> findAllItemsPagingAndSorting(String search, ItemSort itemSort, int pageSize, int pageNumber) {
+        return itemRepository.findAll()
+                .filter(item -> search == null
+                        || search.isBlank()
+                        || item.getTitle().toLowerCase().contains(search.toLowerCase())
+                        || (item.getDescription() != null
+                        && item.getDescription().toLowerCase().contains(search.toLowerCase())))
+                .sort((a, b) -> {
+                    if (itemSort == ItemSort.ALPHA) {
+                        return a.getTitle().compareToIgnoreCase(b.getTitle());
+                    } else if (itemSort == ItemSort.PRICE) {
+                        return a.getPrice().compareTo(b.getPrice());
+                    }
+                    return 0;
+                })
+                .skip((long) pageSize * (pageNumber - 1))
+                .take(pageSize)
+                .map(itemMapper::toItemDto);
     }
 
     @Override
-    public List<ItemDto> findAllItemsByIds(List<Long> itemIds) {
-
-        return itemRepository.findAllByIdIn(itemIds)
-                .stream()
-                .map(itemMapper::toItemDto)
-                .toList();
+    public Flux<ItemDto> findAllItemsByIds(List<Long> itemIds) {
+        return itemRepository.findAllById(itemIds)
+                .map(itemMapper::toItemDto);
     }
 
     @Override
-    @Transactional
-    public Long addItem(String title, String description, MultipartFile image, Integer count, BigDecimal price) {
-
-        ItemEntity item = ItemEntity.builder()
+    public Mono<Long> addItem(String title, String description, FilePart image, Integer count, BigDecimal price) {
+        Items item = Items.builder()
                 .title(title)
                 .description(description)
                 .count(count)
                 .price(price)
                 .build();
-
-        itemRepository.save(item);
-        Long itemId = item.getId();
-
-        if (image.isEmpty()) {
-            return itemId;
-        }
-        try {
-            String imgPath = uploadImage(itemId, image);
-
-            itemRepository.updateImagePath(itemId, imgPath);
-        } catch (IOException e) {
-            log.error(IMAGE_UPLOAD_ERROR_TEMPLATE, itemId);
-        }
-
-        return itemId;
+        return itemRepository.save(item)
+                .flatMap(saved -> {
+                    if (image == null) {
+                        return Mono.just(saved.getId());
+                    }
+                    String imgPath = "item-image-" + saved.getId() + "." + getExtension(image.filename());
+                    Path uploadDir = Paths.get(System.getProperty("user.dir"), pathForUploadImage);
+                    Path filePath = uploadDir.resolve(imgPath);
+                    return Mono.fromCallable(() -> Files.createDirectories(uploadDir))
+                            .then(image.transferTo(filePath))
+                            .then(itemRepository.findById(saved.getId())
+                                    .flatMap(entity -> {
+                                        entity.setImgPath(imgPath);
+                                        return itemRepository.save(entity);
+                                    })
+                                    .thenReturn(saved.getId()));
+                });
     }
 
     @Override
-    @Transactional
-    public void editItem(Long itemId, String title, String description, MultipartFile image, Integer count, BigDecimal price) {
-
-        ItemEntity item = itemRepository.findById(itemId)
-                .orElseThrow(() -> new NotFoundException("Товара с id: " + itemId + " не существует"));
-        String imagePath = item.getImgPath();
-
-        if (!image.isEmpty()) {
-            try {
-                imagePath = uploadImage(itemId, image);
-            } catch (IOException e) {
-                log.error(IMAGE_UPLOAD_ERROR_TEMPLATE, itemId);
-            }
-        }
-
-        item.setTitle(title);
-        item.setDescription(description);
-        item.setImgPath(imagePath);
-        item.setCount(count);
-        item.setPrice(price);
-        itemRepository.save(item);
+    public Mono<Void> editItem(Long itemId, String title, String description, FilePart image, Integer count, BigDecimal price) {
+        return itemRepository.findById(itemId)
+                .flatMap(item -> {
+                    Mono<String> imagePathMono;
+                    if (image != null) {
+                        String imgPath = "item-image-" + itemId + "." + getExtension(image.filename());
+                        Path uploadDir = Paths.get(System.getProperty("user.dir"), pathForUploadImage);
+                        Path filePath = uploadDir.resolve(imgPath);
+                        imagePathMono = Mono.fromCallable(() -> Files.createDirectories(uploadDir))
+                                .then(image.transferTo(filePath))
+                                .thenReturn(imgPath);
+                    } else {
+                        imagePathMono = Mono.just(item.getImgPath());
+                    }
+                    return imagePathMono.flatMap(imgPath -> {
+                        item.setTitle(title);
+                        item.setDescription(description);
+                        item.setImgPath(imgPath);
+                        item.setCount(count);
+                        item.setPrice(price);
+                        return itemRepository.save(item).then();
+                    });
+                });
     }
 
     @Override
-    @Transactional
-    public void deleteItem(Long itemId) {
-
-        itemRepository.deleteById(itemId);
+    public Mono<Void> deleteItem(Long itemId) {
+        return itemRepository.deleteById(itemId);
     }
 
     @Override
-    @Transactional
-    public void updateItem(CartItemDto cartItemDto) {
-
-        itemRepository.updateCountItem(cartItemDto.getItemId(), cartItemDto.getCount());
+    public Mono<Void> updateItem(CartItemDto cartItemDto) {
+        return itemRepository.findById(cartItemDto.getItemId())
+                .flatMap(item -> {
+                    item.setCount(item.getCount() - cartItemDto.getCount());
+                    return itemRepository.save(item).then();
+                });
     }
 
-    private Pageable resolvePageable(ItemSort itemSort, Integer pageSize, Integer pageNumber) {
-        return switch (itemSort) {
-            case NO -> PageRequest.of(pageNumber, pageSize);
-            case ALPHA -> PageRequest.of(pageNumber, pageSize, Sort.by(Sort.Direction.ASC, "title"));
-            case PRICE -> PageRequest.of(pageNumber, pageSize, Sort.by(Sort.Direction.ASC, "price"));
-        };
-    }
-
-    private String uploadImage(Long itemId, MultipartFile image) throws IOException {
-
-        String imagePath = "item-image-" + itemId + "." + getExtension(image.getOriginalFilename());
-
-        Path uploadDir = Paths.get(System.getProperty("user.dir"), pathForUploadImage);
-        Files.createDirectories(uploadDir);
-
-        Path path = uploadDir.resolve(imagePath);
-        image.transferTo(path);
-
-        return imagePath;
+    private static String getExtension(String filename) {
+        int dotIndex = filename.lastIndexOf('.');
+        return (dotIndex == -1) ? "" : filename.substring(dotIndex + 1);
     }
 }
