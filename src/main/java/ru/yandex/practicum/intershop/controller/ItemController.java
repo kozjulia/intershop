@@ -1,21 +1,19 @@
 package ru.yandex.practicum.intershop.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
 import reactor.core.publisher.Mono;
 import ru.yandex.practicum.intershop.dto.Action;
+import ru.yandex.practicum.intershop.dto.ActionRequest;
+import ru.yandex.practicum.intershop.dto.ItemRequest;
 import ru.yandex.practicum.intershop.service.CartService;
 import ru.yandex.practicum.intershop.service.ItemService;
-
-import java.math.BigDecimal;
 
 import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.REDIRECT_ITEMS;
 import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.REDIRECT_MAIN_ITEMS;
@@ -60,23 +58,13 @@ public class ItemController {
     /**
      * Добавление товара
      *
-     * @param title       Название товара
-     * @param description Описание товара
-     * @param image       Файл картинки товара
-     * @param count       Количество товара
-     * @param price       Цена товара
+     * @param item Товар
      * @return Редирект на созданный "/items/{id}"
      */
     @PostMapping
-    public Mono<String> addItem(
-            @RequestParam String title,
-            @RequestParam(required = false) String description,
-            @RequestPart(required = false) FilePart image,
-            @RequestParam(required = false, defaultValue = "0") Integer count,
-            @RequestParam(required = false, defaultValue = "0.00") BigDecimal price
-    ) {
+    public Mono<String> addItem(@ModelAttribute ItemRequest item) {
 
-        return itemService.addItem(title, description, image, count, price)
+        return itemService.addItem(item.title(), item.description(), item.image(), item.count(), item.price())
                 .map(itemId -> REDIRECT_ITEMS + itemId);
     }
 
@@ -97,26 +85,18 @@ public class ItemController {
     /**
      * Редактирование товара
      *
-     * @param itemId      Идентификатор товара
-     * @param title       Название товара
-     * @param description Описание товара
-     * @param image       Файл картинки товара (класс MultipartFile, может быть null - значит, остается прежним)
-     * @param count       Количество товара
-     * @param price       Цена товара
+     * @param itemId Идентификатор товара
+     * @param item   Товар
      * @return Редирект на отредактированный "/items/{id}"
      */
     @PostMapping("{id}/edit")
     public Mono<String> editItem(
             @PathVariable("id") Long itemId,
-            @RequestParam String title,
-            @RequestParam(required = false) String description,
-            @RequestPart(required = false) FilePart image,
-            @RequestParam(required = false) Integer count,
-            @RequestParam(required = false) BigDecimal price
+            @ModelAttribute ItemRequest item
     ) {
 
-        return itemService.editItem(itemId, title, description, image, count, price)
-                .thenReturn(REDIRECT_ITEMS + itemId);
+        return itemService.editItem(itemId, item.title(), item.description(), item.image(), item.count(), item.price())
+                .map(id -> REDIRECT_ITEMS + itemId);
     }
 
     /**
@@ -134,16 +114,16 @@ public class ItemController {
     /**
      * Изменение количества товара в корзине
      *
-     * @param itemId Идентификатор товара
-     * @param action Действие с товаром в корзине
+     * @param itemId        Идентификатор товара
+     * @param actionRequest Действие с товаром в корзине
      * @return Редирект на "/items/{id}"
      */
     @PostMapping("{id}")
     public Mono<String> changeItemCountInCart(
             @PathVariable("id") Long itemId,
-            @RequestParam String action
+            @ModelAttribute ActionRequest actionRequest
     ) {
-        return Mono.fromRunnable(() -> cartService.changeItemCountInCartByItemId(itemId, Action.forName(action)))
+        return Mono.fromRunnable(() -> cartService.changeItemCountInCartByItemId(itemId, Action.forName(actionRequest.action())))
                 .thenReturn(REDIRECT_ITEMS + itemId);
     }
 }

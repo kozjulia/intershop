@@ -4,12 +4,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import reactor.core.publisher.Mono;
 import ru.yandex.practicum.intershop.dto.Action;
+import ru.yandex.practicum.intershop.dto.ActionRequest;
 import ru.yandex.practicum.intershop.dto.ItemSort;
 import ru.yandex.practicum.intershop.dto.PagingDto;
 import ru.yandex.practicum.intershop.service.CartService;
@@ -58,16 +60,16 @@ public class MainController {
     /**
      * Изменение количества товара в корзине
      *
-     * @param itemId Идентификатор товара
-     * @param action Действие с товаром в корзине
+     * @param itemId        Идентификатор товара
+     * @param actionRequest Действие с товаром в корзине
      * @return Редирект на "/main/items"
      */
     @PostMapping("{id}")
     public Mono<String> changeItemCountInCart(
             @PathVariable("id") Long itemId,
-            @RequestParam String action
+            @ModelAttribute ActionRequest actionRequest
     ) {
-        return Mono.fromRunnable(() -> cartService.changeItemCountInCartByItemId(itemId, Action.forName(action)))
+        return Mono.fromRunnable(() -> cartService.changeItemCountInCartByItemId(itemId, Action.forName(actionRequest.action())))
                 .thenReturn(REDIRECT_MAIN_ITEMS);
     }
 }

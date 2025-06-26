@@ -32,7 +32,6 @@ public class ItemServiceImpl implements ItemService {
 
     private final ItemMapper itemMapper;
     private final ItemRepository itemRepository;
-    // private final SequenceGenerator sequenceGenerator;
 
     @Value("${intershop.path-for-upload-image}")
     private String pathForUploadImage;
@@ -100,13 +99,7 @@ public class ItemServiceImpl implements ItemService {
                 .count(count)
                 .price(price)
                 .build();
-        /*
-        sequenceGenerator.generateOrderId()
-                .flatMap(id -> {
-                    item.setId(id);
-                    return itemRepository.save(item);
-                })
-         */
+
         return itemRepository.save(item)
                 .flatMap(saved -> {
                     if (image == null) {

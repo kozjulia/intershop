@@ -25,7 +25,6 @@ public class OrderServiceImpl implements OrderService {
     private final ItemService itemService;
     private final ItemRepository itemRepository;
     private final OrderRepository orderRepository;
-    //private final SequenceGenerator sequenceGenerator;
     private final OrderItemRepository orderItemRepository;
 
     @Override
@@ -35,14 +34,6 @@ public class OrderServiceImpl implements OrderService {
         return cartService.getAndResetCart()
                 .collectList()
                 .flatMap(items ->
-                        /*
-                         sequenceGenerator.generateOrderId()
-                                .flatMap(id -> {
-                                    OrderEntity order = new OrderEntity();
-                                    order.setId(id);
-                                    return orderRepository.save(order);
-                                })
-                         */
                         orderRepository.save(OrderEntity.builder().build())
                                 .flatMap(order -> {
                                     Flux<OrderItemEntity> orderItemsFlux = Flux.fromIterable(items)
