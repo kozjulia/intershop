@@ -16,12 +16,12 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "orders")
+@Table("orders")
 @EqualsAndHashCode(of = "id")
 public class OrderEntity {
 
     @Id
     private Long id;
 
-    private List<Long> itemIds;
+    private List<Long> items;
 }

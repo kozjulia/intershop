@@ -1,30 +1,24 @@
 package ru.yandex.practicum.intershop.repository;
 
-import org.springframework.data.r2dbc.repository.Modifying;
-import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 import ru.yandex.practicum.intershop.model.ItemEntity;
-
-import java.util.List;
 
 @Repository
 public interface ItemRepository extends R2dbcRepository<ItemEntity, Long> {
 
-    @Query("""
-            SELECT * FROM items
-            WHERE (:search IS NULL OR title ILIKE '%' || :search || '%' OR description ILIKE '%' || :search || '%')
-            ORDER BY :sortColumn
-            LIMIT :pageSize OFFSET :offset
-            """)
-    Flux<ItemEntity> searchAllPagingAndSorting(@Param("search") String search, @Param("sortColumn") String sortColumn, @Param("pageSize") Integer pageSize, @Param("offset") Integer offset);
+    /*  @Query("""
+              SELECT * FROM items
+              WHERE (:search IS NULL OR title ILIKE '%' || :search || '%' OR description ILIKE '%' || :search || '%')
+              ORDER BY :sortColumn
+              LIMIT :pageSize OFFSET :offset
+              """)
+      Flux<ItemEntity> searchAllPagingAndSorting(@Param("search") String search, @Param("sortColumn") String sortColumn, @Param("pageSize") Integer pageSize, @Param("offset") Integer offset);
+  */
+    Flux<ItemEntity> findAllById(Iterable<Long> itemIds);
 
-    Flux<ItemEntity> findAllByIdIn(List<Long> itemIds);
-
-    @Modifying
+ /*   @Modifying
     @Query("""
             UPDATE items
             SET img_path = :imgPath
@@ -39,4 +33,5 @@ public interface ItemRepository extends R2dbcRepository<ItemEntity, Long> {
             WHERE id = :itemId
             """)
     Mono<Void> updateCountItem(@Param("itemId") Long itemId, @Param("count") Integer count);
+*/
 }

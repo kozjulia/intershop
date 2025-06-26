@@ -8,10 +8,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import ru.yandex.practicum.intershop.dto.Action;
-import ru.yandex.practicum.intershop.dto.ItemDto;
 import ru.yandex.practicum.intershop.dto.ItemSort;
 import ru.yandex.practicum.intershop.dto.PagingDto;
 import ru.yandex.practicum.intershop.service.CartService;
@@ -46,20 +44,15 @@ public class MainController {
             @RequestParam(required = false, defaultValue = "1") Integer pageNumber,
             Model model
     ) {
-
-        Flux<ItemDto> items = itemService.findAllItemsPagingAndSorting(search, sort, pageSize, pageNumber);
-
-        return items.collectList()
-                .flatMap(list -> {
-                    model.addAttribute("items", list);
+        return itemService.findAllItemsPagingAndSorting(search, sort, pageSize, pageNumber)
+                .collectList()
+                .doOnNext(items -> {
+                    model.addAttribute("items", items);
                     model.addAttribute("search", search);
                     model.addAttribute("sort", sort);
-                    return items.count();
+                    model.addAttribute("paging", new PagingDto(pageNumber, pageSize, items.size()));
                 })
-                .map(total -> {
-                    model.addAttribute("paging", new PagingDto(pageNumber, pageSize, total));
-                    return TEMPLATE_MAIN;
-                });
+                .thenReturn(TEMPLATE_MAIN);
     }
 
     /**
@@ -74,7 +67,7 @@ public class MainController {
             @PathVariable("id") Long itemId,
             @RequestParam String action
     ) {
-        return cartService.changeItemCountInCartByItemId(itemId, Action.forName(action))
+        return Mono.fromRunnable(() -> cartService.changeItemCountInCartByItemId(itemId, Action.forName(action)))
                 .thenReturn(REDIRECT_MAIN_ITEMS);
     }
 }

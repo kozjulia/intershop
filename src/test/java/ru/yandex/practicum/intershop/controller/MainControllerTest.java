@@ -2,16 +2,26 @@ package ru.yandex.practicum.intershop.controller;
 
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.test.web.servlet.client.MockMvcWebTestClient;
-import ru.yandex.practicum.intershop.BaseIntegrationTest;
 
 import static org.apache.logging.log4j.util.Strings.EMPTY;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static ru.yandex.practicum.intershop.TestConstants.ITEM_ID;
 
-class MainControllerTest extends BaseIntegrationTest {
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureWebTestClient
+@ActiveProfiles("test")
+class MainControllerTest {
+
+    @Autowired
+    private WebTestClient webTestClient;
 
     @Test
     @SneakyThrows
@@ -22,7 +32,6 @@ class MainControllerTest extends BaseIntegrationTest {
                         .queryParam("search", EMPTY)
                         .queryParam("sort", "NO")
                         .build())
-                .accept(MediaType.TEXT_HTML)
                 .exchange()
                 .expectStatus().isOk()
                 .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_HTML)
@@ -39,7 +48,6 @@ class MainControllerTest extends BaseIntegrationTest {
     }
 
     @Test
-    @SneakyThrows
     void changeItemCountInCart_shouldRedirectTest() {
         webTestClient
                 .post()

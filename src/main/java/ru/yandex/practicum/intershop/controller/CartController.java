@@ -8,13 +8,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import ru.yandex.practicum.intershop.dto.Action;
-import ru.yandex.practicum.intershop.dto.ItemDto;
 import ru.yandex.practicum.intershop.service.CartService;
-
-import java.math.BigDecimal;
 
 import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.REDIRECT_CART_ITEMS;
 import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.TEMPLATE_CART;
@@ -34,23 +30,17 @@ public class CartController {
      */
     @GetMapping
     public Mono<String> getCart(Model model) {
-
-        Flux<ItemDto> items = cartService.getCart();
-
-        Mono<BigDecimal> total = items
-                .map(item -> item.getPrice().multiply(new BigDecimal(item.getCount())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        Mono<Boolean> isEmptyCart = items
-                .hasElements()
-                .map(hasElement -> !hasElement);
-
-        return total.zipWith(isEmptyCart, (t, e) -> {
-            model.addAttribute("items", items);
-            model.addAttribute("total", t);
-            model.addAttribute("empty", e);
-            return TEMPLATE_CART;
-        });
+        return cartService.getCart()
+                .collectList()
+                .doOnNext(items -> {
+                    java.math.BigDecimal total = items.stream()
+                            .map(item -> item.getPrice().multiply(new java.math.BigDecimal(item.getCount())))
+                            .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+                    model.addAttribute("items", items);
+                    model.addAttribute("total", total);
+                    model.addAttribute("empty", items.isEmpty());
+                })
+                .thenReturn(TEMPLATE_CART);
     }
 
     /**

@@ -65,10 +65,10 @@ public class OrderController {
     ) {
 
         return orderService.findOrderById(orderId)
-                .flatMap(order -> {
+                .doOnNext(order -> {
                     model.addAttribute("order", order);
                     model.addAttribute("newOrder", newOrder);
-                    return Mono.just(TEMPLATE_ORDER);
-                });
+                })
+                .thenReturn(TEMPLATE_ORDER);
     }
 }

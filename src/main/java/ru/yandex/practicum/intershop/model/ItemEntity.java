@@ -16,7 +16,7 @@ import java.math.BigDecimal;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "items")
+@Table("items")
 @EqualsAndHashCode(of = "id")
 public class ItemEntity {
 

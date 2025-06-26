@@ -1,6 +1,7 @@
 package ru.yandex.practicum.intershop.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,7 +10,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
 import ru.yandex.practicum.intershop.dto.Action;
 import ru.yandex.practicum.intershop.service.CartService;
@@ -38,10 +38,7 @@ public class ItemController {
      * @return Шаблон "item.html"
      */
     @GetMapping("/{id}")
-    public Mono<String> getItemById(
-            @PathVariable("id") Long itemId,
-            Model model) {
-
+    public Mono<String> getItemById(@PathVariable("id") Long itemId, Model model) {
         return itemService.getItemById(itemId)
                 .doOnNext(item -> model.addAttribute("item", item))
                 .thenReturn(TEMPLATE_ITEM);
@@ -74,9 +71,9 @@ public class ItemController {
     public Mono<String> addItem(
             @RequestParam String title,
             @RequestParam(required = false) String description,
-            @RequestPart MultipartFile image,
+            @RequestPart(required = false) FilePart image,
             @RequestParam(required = false, defaultValue = "0") Integer count,
-            @RequestParam(required = false, defaultValue = "0,00") BigDecimal price
+            @RequestParam(required = false, defaultValue = "0.00") BigDecimal price
     ) {
 
         return itemService.addItem(title, description, image, count, price)
@@ -91,10 +88,7 @@ public class ItemController {
      * @return Редирект на форму редактирования товара "add-item.html"
      */
     @GetMapping("/{id}/edit")
-    public Mono<String> getEditingForm(
-            @PathVariable("id") Long itemId,
-            Model model
-    ) {
+    public Mono<String> getEditingForm(@PathVariable("id") Long itemId, Model model) {
         return itemService.getItemById(itemId)
                 .doOnNext(item -> model.addAttribute("item", item))
                 .thenReturn(TEMPLATE_ADD_ITEM);
@@ -116,7 +110,7 @@ public class ItemController {
             @PathVariable("id") Long itemId,
             @RequestParam String title,
             @RequestParam(required = false) String description,
-            @RequestPart(required = false) MultipartFile image,
+            @RequestPart(required = false) FilePart image,
             @RequestParam(required = false) Integer count,
             @RequestParam(required = false) BigDecimal price
     ) {
@@ -149,7 +143,7 @@ public class ItemController {
             @PathVariable("id") Long itemId,
             @RequestParam String action
     ) {
-        return cartService.changeItemCountInCartByItemId(itemId, Action.forName(action))
+        return Mono.fromRunnable(() -> cartService.changeItemCountInCartByItemId(itemId, Action.forName(action)))
                 .thenReturn(REDIRECT_ITEMS + itemId);
     }
 }

@@ -22,10 +22,10 @@ public class ImageController {
      * @return Набор байт картинки товара
      */
     @GetMapping("/{imagePath}")
-    public ResponseEntity<Mono<byte[]>> getImageItem(@PathVariable String imagePath) {
-
-        return ResponseEntity.ok()
-                .contentType(MediaType.IMAGE_JPEG)
-                .body(itemService.getItemImageByImagePath(imagePath));
+    public Mono<ResponseEntity<byte[]>> getImageItem(@PathVariable String imagePath) {
+        return itemService.getItemImageByImagePath(imagePath)
+                .map(bytes -> ResponseEntity.ok()
+                        .contentType(MediaType.IMAGE_JPEG)
+                        .body(bytes));
     }
 }
