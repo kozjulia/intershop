@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.reactive.result.view.Rendering;
 import reactor.core.publisher.Mono;
 import ru.yandex.practicum.intershop.dto.Action;
 import ru.yandex.practicum.intershop.dto.ActionRequest;
@@ -15,8 +16,8 @@ import ru.yandex.practicum.intershop.dto.ItemRequest;
 import ru.yandex.practicum.intershop.service.CartService;
 import ru.yandex.practicum.intershop.service.ItemService;
 
-import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.REDIRECT_ITEMS;
-import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.REDIRECT_MAIN_ITEMS;
+import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.ITEMS;
+import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.MAIN_ITEMS;
 import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.TEMPLATE_ADD_ITEM;
 import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.TEMPLATE_ITEM;
 
@@ -36,10 +37,11 @@ public class ItemController {
      * @return Шаблон "item.html"
      */
     @GetMapping("/{id}")
-    public Mono<String> getItemById(@PathVariable("id") Long itemId, Model model) {
+    public Mono<Rendering> getItemById(@PathVariable("id") Long itemId, Model model) {
         return itemService.getItemById(itemId)
                 .doOnNext(item -> model.addAttribute("item", item))
-                .thenReturn(TEMPLATE_ITEM);
+                .thenReturn(Rendering.view(TEMPLATE_ITEM)
+                        .build());
     }
 
     /**
@@ -49,10 +51,11 @@ public class ItemController {
      * @return Шаблон "add-item.html"
      */
     @GetMapping("/add")
-    public Mono<String> getAddingForm(Model model) {
+    public Mono<Rendering> getAddingForm(Model model) {
         model.addAttribute("item", null);
 
-        return Mono.just(TEMPLATE_ADD_ITEM);
+        return Mono.just(Rendering.view(TEMPLATE_ADD_ITEM)
+                .build());
     }
 
     /**
@@ -62,10 +65,11 @@ public class ItemController {
      * @return Редирект на созданный "/items/{id}"
      */
     @PostMapping
-    public Mono<String> addItem(@ModelAttribute ItemRequest item) {
+    public Mono<Rendering> addItem(@ModelAttribute ItemRequest item) {
 
         return itemService.addItem(item.title(), item.description(), item.image(), item.count(), item.price())
-                .map(itemId -> REDIRECT_ITEMS + itemId);
+                .map(itemId -> Rendering.redirectTo(ITEMS + itemId)
+                        .build());
     }
 
     /**
@@ -76,10 +80,11 @@ public class ItemController {
      * @return Редирект на форму редактирования товара "add-item.html"
      */
     @GetMapping("/{id}/edit")
-    public Mono<String> getEditingForm(@PathVariable("id") Long itemId, Model model) {
+    public Mono<Rendering> getEditingForm(@PathVariable("id") Long itemId, Model model) {
         return itemService.getItemById(itemId)
                 .doOnNext(item -> model.addAttribute("item", item))
-                .thenReturn(TEMPLATE_ADD_ITEM);
+                .thenReturn(Rendering.view(TEMPLATE_ADD_ITEM)
+                        .build());
     }
 
     /**
@@ -90,13 +95,14 @@ public class ItemController {
      * @return Редирект на отредактированный "/items/{id}"
      */
     @PostMapping("{id}/edit")
-    public Mono<String> editItem(
+    public Mono<Rendering> editItem(
             @PathVariable("id") Long itemId,
             @ModelAttribute ItemRequest item
     ) {
 
         return itemService.editItem(itemId, item.title(), item.description(), item.image(), item.count(), item.price())
-                .map(id -> REDIRECT_ITEMS + itemId);
+                .map(id -> Rendering.redirectTo(ITEMS + itemId)
+                        .build());
     }
 
     /**
@@ -106,9 +112,10 @@ public class ItemController {
      * @return Редирект на "/main/items"
      */
     @PostMapping(value = "/{id}/delete")
-    public Mono<String> deleteItem(@PathVariable("id") Long itemId) {
+    public Mono<Rendering> deleteItem(@PathVariable("id") Long itemId) {
         return itemService.deleteItem(itemId)
-                .thenReturn(REDIRECT_MAIN_ITEMS);
+                .thenReturn(Rendering.redirectTo(MAIN_ITEMS)
+                        .build());
     }
 
     /**
@@ -119,11 +126,12 @@ public class ItemController {
      * @return Редирект на "/items/{id}"
      */
     @PostMapping("{id}")
-    public Mono<String> changeItemCountInCart(
+    public Mono<Rendering> changeItemCountInCart(
             @PathVariable("id") Long itemId,
             @ModelAttribute ActionRequest actionRequest
     ) {
         return Mono.fromRunnable(() -> cartService.changeItemCountInCartByItemId(itemId, Action.forName(actionRequest.action())))
-                .thenReturn(REDIRECT_ITEMS + itemId);
+                .thenReturn(Rendering.redirectTo(ITEMS + itemId)
+                        .build());
     }
 }

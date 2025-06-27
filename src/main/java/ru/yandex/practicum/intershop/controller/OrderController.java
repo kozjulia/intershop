@@ -7,10 +7,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.reactive.result.view.Rendering;
 import reactor.core.publisher.Mono;
 import ru.yandex.practicum.intershop.service.OrderService;
 
-import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.REDIRECT_ORDERS;
+import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.ORDERS;
 import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.TEMPLATE_ORDER;
 import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.TEMPLATE_ORDERS;
 
@@ -28,10 +29,11 @@ public class OrderController {
      * @return Редирект на "/orders/{id}?newOrder=true"
      */
     @PostMapping("/buy")
-    public Mono<String> buyFromCart() {
+    public Mono<Rendering> buyFromCart() {
 
         return orderService.createOrder()
-                .map(orderId -> REDIRECT_ORDERS + orderId + PARAM_NEW_ORDER_IS_TRUE);
+                .map(orderId -> Rendering.redirectTo(ORDERS + orderId + PARAM_NEW_ORDER_IS_TRUE)
+                        .build());
     }
 
     /**
@@ -41,12 +43,13 @@ public class OrderController {
      * @return Шаблон "orders.html"
      */
     @GetMapping("/orders")
-    public Mono<String> getOrders(Model model) {
+    public Mono<Rendering> getOrders(Model model) {
 
         return orderService.findOrders()
                 .collectList()
                 .doOnNext(orders -> model.addAttribute("orders", orders))
-                .thenReturn(TEMPLATE_ORDERS);
+                .thenReturn(Rendering.view(TEMPLATE_ORDERS)
+                        .build());
     }
 
     /**
@@ -58,7 +61,7 @@ public class OrderController {
      * @return Шаблон "order.html"
      */
     @GetMapping("/orders/{id}")
-    public Mono<String> getOrderById(
+    public Mono<Rendering> getOrderById(
             @PathVariable("id") Long orderId,
             @RequestParam(required = false, defaultValue = "false") Boolean newOrder,
             Model model
@@ -69,6 +72,7 @@ public class OrderController {
                     model.addAttribute("order", order);
                     model.addAttribute("newOrder", newOrder);
                 })
-                .thenReturn(TEMPLATE_ORDER);
+                .thenReturn(Rendering.view(TEMPLATE_ORDER)
+                        .build());
     }
 }

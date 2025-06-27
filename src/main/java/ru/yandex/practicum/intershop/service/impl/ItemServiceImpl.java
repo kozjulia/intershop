@@ -22,9 +22,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import static org.apache.logging.log4j.util.Strings.isBlank;
-import static org.apache.logging.log4j.util.Strings.isNotBlank;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -54,31 +51,13 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public Flux<ItemDto> findAllItemsPagingAndSorting(String search, ItemSort itemSort, Integer pageSize, Integer pageNumber) {
-        return itemRepository.findAll()
-                .filter(item -> isBlank(search)
-                        || item.getTitle().toLowerCase().contains(search.toLowerCase())
-                        || (isNotBlank(item.getDescription())
-                        && item.getDescription().toLowerCase().contains(search.toLowerCase())))
-                .sort((a, b) -> {
-                    if (ItemSort.ALPHA == itemSort) {
-                        return a.getTitle().compareToIgnoreCase(b.getTitle());
-                    } else if (ItemSort.PRICE == itemSort) {
-                        return a.getPrice().compareTo(b.getPrice());
-                    }
-                    return 0;
-                })
-                .skip((long) pageSize * (pageNumber - 1))
-                .take(pageSize)
-                .map(itemMapper::toItemDto);
-        /*
-            int offset = Math.max(0, (pageNumber - 1) * pageSize);
+        int offset = Math.max(0, (pageNumber - 1) * pageSize);
         String sortColumn = resolveSortColumn(itemSort);
 
         return itemRepository
                 .searchAllPagingAndSorting(search, sortColumn, pageSize, offset)
                 .map(itemMapper::toItemDto);
 
-         */
 
     }
 
@@ -167,5 +146,13 @@ public class ItemServiceImpl implements ItemService {
     private static String getExtension(String filename) {
         int dotIndex = filename.lastIndexOf('.');
         return (dotIndex == -1) ? "" : filename.substring(dotIndex + 1);
+    }
+
+    private String resolveSortColumn(ItemSort itemSort) {
+        return switch (itemSort) {
+            case NO -> "id";
+            case ALPHA -> "title";
+            case PRICE -> "price";
+        };
     }
 }

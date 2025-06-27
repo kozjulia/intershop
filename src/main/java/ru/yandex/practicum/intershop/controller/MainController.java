@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.reactive.result.view.Rendering;
 import reactor.core.publisher.Mono;
 import ru.yandex.practicum.intershop.dto.Action;
 import ru.yandex.practicum.intershop.dto.ActionRequest;
@@ -17,7 +18,7 @@ import ru.yandex.practicum.intershop.dto.PagingDto;
 import ru.yandex.practicum.intershop.service.CartService;
 import ru.yandex.practicum.intershop.service.ItemService;
 
-import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.REDIRECT_MAIN_ITEMS;
+import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.MAIN_ITEMS;
 import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.TEMPLATE_MAIN;
 
 @Controller
@@ -39,7 +40,7 @@ public class MainController {
      * @return Шаблон "main.html"
      */
     @GetMapping
-    public Mono<String> getMainPage(
+    public Mono<Rendering> getMainPage(
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "NO") ItemSort sort,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize,
@@ -54,7 +55,8 @@ public class MainController {
                     model.addAttribute("sort", sort);
                     model.addAttribute("paging", new PagingDto(pageNumber, pageSize, items.size()));
                 })
-                .thenReturn(TEMPLATE_MAIN);
+                .thenReturn(Rendering.view(TEMPLATE_MAIN)
+                        .build());
     }
 
     /**
@@ -65,11 +67,12 @@ public class MainController {
      * @return Редирект на "/main/items"
      */
     @PostMapping("{id}")
-    public Mono<String> changeItemCountInCart(
+    public Mono<Rendering> changeItemCountInCart(
             @PathVariable("id") Long itemId,
             @ModelAttribute ActionRequest actionRequest
     ) {
         return Mono.fromRunnable(() -> cartService.changeItemCountInCartByItemId(itemId, Action.forName(actionRequest.action())))
-                .thenReturn(REDIRECT_MAIN_ITEMS);
+                .thenReturn(Rendering.redirectTo(MAIN_ITEMS)
+                        .build());
     }
 }

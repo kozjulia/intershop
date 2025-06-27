@@ -8,12 +8,13 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.reactive.result.view.Rendering;
 import reactor.core.publisher.Mono;
 import ru.yandex.practicum.intershop.dto.Action;
 import ru.yandex.practicum.intershop.dto.ActionRequest;
 import ru.yandex.practicum.intershop.service.CartService;
 
-import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.REDIRECT_CART_ITEMS;
+import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.CART_ITEMS;
 import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.TEMPLATE_CART;
 
 @Controller
@@ -30,7 +31,7 @@ public class CartController {
      * @return Шаблон "cart.html"
      */
     @GetMapping
-    public Mono<String> getCart(Model model) {
+    public Mono<Rendering> getCart(Model model) {
         return cartService.getCart()
                 .collectList()
                 .doOnNext(items -> {
@@ -41,7 +42,8 @@ public class CartController {
                     model.addAttribute("total", total);
                     model.addAttribute("empty", items.isEmpty());
                 })
-                .thenReturn(TEMPLATE_CART);
+                .thenReturn(Rendering.view(TEMPLATE_CART)
+                        .build());
     }
 
     /**
@@ -52,11 +54,12 @@ public class CartController {
      * @return Редирект на "/cart/items"
      */
     @PostMapping("{id}")
-    public Mono<String> changeItemCountInCart(
+    public Mono<Rendering> changeItemCountInCart(
             @PathVariable("id") Long itemId,
             @ModelAttribute ActionRequest actionRequest
     ) {
         return cartService.changeItemCountInCartByItemId(itemId, Action.forName(actionRequest.action()))
-                .thenReturn(REDIRECT_CART_ITEMS);
+                .thenReturn(Rendering.redirectTo(CART_ITEMS)
+                        .build());
     }
 }
