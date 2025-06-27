@@ -5,5 +5,16 @@ spring:
     username: testuser
     password: testpass
 
+  flyway:
+    enabled: true
+    url: jdbc:postgresql://localhost:5432/testdb
+    user: testuser
+    password: testpass
+
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/testdb
+    username: testuser
+    password: testpass
+
 intershop:
   path-for-upload-image: uploads

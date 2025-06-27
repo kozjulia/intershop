@@ -5,17 +5,21 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import ru.yandex.practicum.intershop.TestConstants;
 import ru.yandex.practicum.intershop.dto.CartItemDto;
 import ru.yandex.practicum.intershop.dto.ItemDto;
+import ru.yandex.practicum.intershop.dto.ItemSort;
 import ru.yandex.practicum.intershop.mapper.ItemMapper;
+import ru.yandex.practicum.intershop.model.ItemEntity;
 import ru.yandex.practicum.intershop.repository.ItemRepository;
 
 import java.util.List;
 
+import static org.apache.logging.log4j.util.Strings.EMPTY;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static ru.yandex.practicum.intershop.TestConstants.ITEM_COUNT;
@@ -49,24 +53,24 @@ class ItemServiceImplTest {
     void getItemByIdSuccessfulTest() {
         when(itemRepository.findById(TestConstants.ITEM_ID)).thenReturn(Mono.just(TestConstants.ITEM_ENTITY));
         when(itemMapper.toItemDto(TestConstants.ITEM_ENTITY)).thenReturn(ITEM_DTO);
+
         StepVerifier.create(itemService.getItemById(TestConstants.ITEM_ID))
                 .expectNext(ITEM_DTO)
                 .verifyComplete();
+
         verify(itemRepository).findById(TestConstants.ITEM_ID);
         verify(itemMapper).toItemDto(TestConstants.ITEM_ENTITY);
     }
 
-   /* @Test
+    @Test
     void getItemImageByImageWithWrongImagePathPathSuccessfulTest() {
         ReflectionTestUtils.setField(itemService, "pathForUploadImage", "uploads");
-        Mono<byte[]> resultImage = itemService.getItemImageByImagePath(ITEM_IMAGE_PATH);
 
-        StepVerifier.create(resultImage)
-                .expectNext(new byte[0])
+        StepVerifier.create(itemService.getItemImageByImagePath(ITEM_IMAGE_PATH))
                 .verifyComplete();
-    }*/
+    }
 
-   /* @Test
+    @Test
     void findAllItemsPagingAndSortingSuccessfulTest() {
         int pageNumber = 1;
         int pageSize = 10;
@@ -79,12 +83,13 @@ class ItemServiceImplTest {
         when(itemMapper.toItemDto(ITEM_ENTITY))
                 .thenReturn(ITEM_DTO);
 
-        Flux<ItemDto> resultItems = itemService.findAllItemsPagingAndSorting(EMPTY, ItemSort.NO, pageSize, pageNumber);
-
-        StepVerifier.create(resultItems)
+        StepVerifier.create(itemService.findAllItemsPagingAndSorting(EMPTY, ItemSort.NO, pageSize, pageNumber))
                 .expectNext(ITEM_DTO)
                 .verifyComplete();
-    }*/
+
+        verify(itemRepository).searchAllPagingAndSorting(EMPTY, sortColumn, pageSize, offset);
+        verify(itemMapper).toItemDto(ITEM_ENTITY);
+    }
 
     @Test
     void findAllItemsByIdsSuccessfulTest() {
@@ -92,9 +97,11 @@ class ItemServiceImplTest {
                 .thenReturn(Flux.just(ITEM_ENTITY));
         when(itemMapper.toItemDto(ITEM_ENTITY))
                 .thenReturn(ITEM_DTO);
-        StepVerifier.create(itemService.findAllItemsByIds(java.util.List.of(TestConstants.ITEM_ID)))
+
+        StepVerifier.create(itemService.findAllItemsByIds(List.of(TestConstants.ITEM_ID)))
                 .expectNext(ITEM_DTO)
                 .verifyComplete();
+
         verify(itemRepository).findAllById(java.util.List.of(TestConstants.ITEM_ID));
         verify(itemMapper).toItemDto(TestConstants.ITEM_ENTITY);
     }

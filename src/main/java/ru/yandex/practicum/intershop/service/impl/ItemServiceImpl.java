@@ -57,8 +57,6 @@ public class ItemServiceImpl implements ItemService {
         return itemRepository
                 .searchAllPagingAndSorting(search, sortColumn, pageSize, offset)
                 .map(itemMapper::toItemDto);
-
-
     }
 
     @Override
