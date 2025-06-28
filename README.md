@@ -9,8 +9,8 @@ _______
 -------
 
 Приложение написано на **Java 21**, использует **Spring Boot 3**, **Gradle**, **Thymeleaf**, **Webflux**, **Flyway**
-**JUnit 5**, **Mockito**, **Testcontainers**, **Docker**, API соответствует **REST**, данные хранятся в БД (r2dbc) **PostgreSQL**, тесты выполняются в **PostgreSQL**.  
-Тестовое покрытие кода - 33% строк кода.
+**JUnit 5**, **Mockito**, **Testcontainers**, **Docker**, API соответствует **REST**, данные хранятся в БД (r2dbc)  **PostgreSQL**, тесты выполняются в **PostgreSQL**.  
+Тестовое покрытие кода - 30% строк кода.
 
 -------
 
