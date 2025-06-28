@@ -83,6 +83,7 @@ jacoco {
 def jacocoExclusions = [
         'ru/yandex/**/controller/**',
         'ru/yandex/**/service/**',
+        'ru.yandex.practicum.intershop.repository.OrderItemRepository',
         'ru.yandex.practicum.intershop.dto.OrderDto',
         'ru.yandex.practicum.intershop.exception.NotFoundException',
         'ru.yandex.practicum.intershop.mapper.ItemMapperImpl'

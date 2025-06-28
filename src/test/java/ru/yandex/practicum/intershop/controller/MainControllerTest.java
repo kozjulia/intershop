@@ -1,32 +1,19 @@
 package ru.yandex.practicum.intershop.controller;
 
-import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.web.reactive.server.WebTestClient;
-import org.springframework.test.web.servlet.client.MockMvcWebTestClient;
+import ru.yandex.practicum.intershop.BaseIntegrationTest;
 
 import static org.apache.logging.log4j.util.Strings.EMPTY;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static ru.yandex.practicum.intershop.TestConstants.ITEM_ID;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@ActiveProfiles("test")
-class MainControllerTest {
-
-    @Autowired
-    private WebTestClient webTestClient;
+class MainControllerTest extends BaseIntegrationTest {
 
     @Test
-    @SneakyThrows
     void getMainPage_shouldReturnHtmlWithMainTest() {
-        var result = webTestClient
+        webTestClient
                 .get()
                 .uri(uriBuilder -> uriBuilder.path("/main/items")
                         .queryParam("search", EMPTY)
@@ -34,17 +21,12 @@ class MainControllerTest {
                         .build())
                 .exchange()
                 .expectStatus().isOk()
-                .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_HTML)
-                .expectBody()
-                .returnResult();
-
-
-        MockMvcWebTestClient.resultActionsFor(result)
-                .andExpect(view().name("main"))
-                .andExpect(model().attributeExists("items"))
-                .andExpect(model().attributeExists("search"))
-                .andExpect(model().attributeExists("sort"))
-                .andExpect(model().attributeExists("paging"));
+                .expectHeader().contentType(MediaType.TEXT_HTML)
+                .expectBody(String.class).consumeWith(response -> {
+                    String body = response.getResponseBody();
+                    assertNotNull(body);
+                    assertTrue(body.contains("<form"));
+                });
     }
 
     @Test

@@ -5,18 +5,6 @@ spring:
   application:
     name: intershop
 
-  datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/intershop}
-    driver-class-name: org.postgresql.Driver
-    username: ${SPRING_DATASOURCE_USER:sa}
-    password: ${SPRING_DATASOURCE_PASSWORD:sa}
-
-  flyway:
-    enabled: true
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/intershop}
-    user: ${SPRING_DATASOURCE_USER:sa}
-    password: ${SPRING_DATASOURCE_PASSWORD:sa}
-
   r2dbc:
     url: ${SPRING_DATASOURCE_R2DBC_URL:r2dbc:postgresql://localhost:5432/intershop}
     username: ${SPRING_DATASOURCE_USER:sa}
@@ -28,6 +16,18 @@ spring:
       max-idle-time: 30s # Время бездействия соединения перед закрытием
       max-life-time: 10m # Максимальное время жизни соединения
       validation-query: SELECT 1 # SQL-запрос для проверки работоспособности соединения
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/intershop}
+    driver-class-name: org.postgresql.Driver
+    username: ${SPRING_DATASOURCE_USER:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:sa}
+
+  flyway:
+    enabled: true
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/intershop}
+    user: ${SPRING_DATASOURCE_USER:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:sa}
 
   thymeleaf:
     check-template-location: true

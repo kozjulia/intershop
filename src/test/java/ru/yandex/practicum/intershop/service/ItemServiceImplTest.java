@@ -1,4 +1,4 @@
-package ru.yandex.practicum.intershop.service.impl;
+package ru.yandex.practicum.intershop.service;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,6 +16,7 @@ import ru.yandex.practicum.intershop.dto.ItemSort;
 import ru.yandex.practicum.intershop.mapper.ItemMapper;
 import ru.yandex.practicum.intershop.model.ItemEntity;
 import ru.yandex.practicum.intershop.repository.ItemRepository;
+import ru.yandex.practicum.intershop.service.impl.ItemServiceImpl;
 
 import java.util.List;
 

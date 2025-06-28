@@ -6,6 +6,7 @@ import reactor.core.publisher.Flux;
 import ru.yandex.practicum.intershop.dto.Action;
 import ru.yandex.practicum.intershop.dto.CartItemDto;
 import ru.yandex.practicum.intershop.dto.ItemDto;
+import ru.yandex.practicum.intershop.exception.NotFoundException;
 import ru.yandex.practicum.intershop.service.CartService;
 import ru.yandex.practicum.intershop.service.ItemService;
 import reactor.core.publisher.Mono;
@@ -37,6 +38,7 @@ public class CartServiceImpl implements CartService {
             case PLUS -> cart.compute(itemId, (k, v) -> isNull(v) ? 1 : v + 1);
             case MINUS -> cart.compute(itemId, (k, v) -> (isNull(v) || v == 0) ? 0 : v - 1);
             case DELETE -> cart.remove(itemId);
+            default -> Mono.just(new NotFoundException("Действия: " + action + " не существует"));
         }
         return Mono.empty();
     }
