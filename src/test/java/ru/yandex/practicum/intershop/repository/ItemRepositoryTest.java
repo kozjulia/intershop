@@ -4,15 +4,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.r2dbc.DataR2dbcTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.springframework.context.annotation.Import;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
+import org.springframework.boot.testcontainers.context.ImportTestcontainers;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.TestcontainersConfiguration;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import ru.yandex.practicum.intershop.PostreSqlTestcontainer;
 import ru.yandex.practicum.intershop.TestConstants;
 import ru.yandex.practicum.intershop.model.ItemEntity;
 
@@ -27,18 +24,13 @@ import static ru.yandex.practicum.intershop.TestConstants.ITEM_TITLE;
 
 @DataR2dbcTest
 @Testcontainers
-@Import(TestcontainersConfiguration.class)
+@ImportTestcontainers(PostreSqlTestcontainer.class)
 class ItemRepositoryTest {
 
     private ItemEntity itemEntity;
 
     @Autowired
     private ItemRepository itemRepository;
-
-    @Container
-    @ServiceConnection
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15");
-
 
     @BeforeEach
     public void init() {

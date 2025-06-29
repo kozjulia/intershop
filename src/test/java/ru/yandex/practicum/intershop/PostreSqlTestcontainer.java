@@ -8,7 +8,7 @@ public class PostreSqlTestcontainer {
 
     @Container
     @ServiceConnection
-    public static final PostgreSQLContainer<?> postgresqlContainer = new PostgreSQLContainer<>("postgres:17-alpine");
+    public static final PostgreSQLContainer<?> postgresqlContainer = new PostgreSQLContainer<>("postgres:15");
 
     static {
         postgresqlContainer.start();
