@@ -7,19 +7,19 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import ru.yandex.practicum.intershop.dto.OrderDto;
+import org.springframework.web.reactive.result.view.Rendering;
+import reactor.core.publisher.Mono;
 import ru.yandex.practicum.intershop.service.OrderService;
 
-import java.util.List;
-
-import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.REDIRECT_ORDERS;
-import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.SLASH;
+import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.ORDERS;
 import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.TEMPLATE_ORDER;
 import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.TEMPLATE_ORDERS;
 
 @Controller
 @RequiredArgsConstructor
 public class OrderController {
+
+    private static final String PARAM_NEW_ORDER_IS_TRUE = "?newOrder=true";
 
     private final OrderService orderService;
 
@@ -29,11 +29,11 @@ public class OrderController {
      * @return Редирект на "/orders/{id}?newOrder=true"
      */
     @PostMapping("/buy")
-    public String buyFromCart() {
+    public Mono<Rendering> buyFromCart() {
 
-        Long orderId = orderService.createOrder();
-
-        return REDIRECT_ORDERS + SLASH + orderId + "?newOrder=true";
+        return orderService.createOrder()
+                .map(orderId -> Rendering.redirectTo(ORDERS + orderId + PARAM_NEW_ORDER_IS_TRUE)
+                        .build());
     }
 
     /**
@@ -43,13 +43,13 @@ public class OrderController {
      * @return Шаблон "orders.html"
      */
     @GetMapping("/orders")
-    public String getOrders(Model model) {
+    public Mono<Rendering> getOrders(Model model) {
 
-        List<OrderDto> orders = orderService.findOrders();
-
-        model.addAttribute("orders", orders);
-
-        return TEMPLATE_ORDERS;
+        return orderService.findOrders()
+                .collectList()
+                .doOnNext(orders -> model.addAttribute("orders", orders))
+                .thenReturn(Rendering.view(TEMPLATE_ORDERS)
+                        .build());
     }
 
     /**
@@ -61,17 +61,18 @@ public class OrderController {
      * @return Шаблон "order.html"
      */
     @GetMapping("/orders/{id}")
-    public String getOrderById(
+    public Mono<Rendering> getOrderById(
             @PathVariable("id") Long orderId,
             @RequestParam(required = false, defaultValue = "false") Boolean newOrder,
             Model model
     ) {
 
-        OrderDto order = orderService.findOrderById(orderId);
-
-        model.addAttribute("order", order);
-        model.addAttribute("newOrder", newOrder);
-
-        return TEMPLATE_ORDER;
+        return orderService.findOrderById(orderId)
+                .doOnNext(order -> {
+                    model.addAttribute("order", order);
+                    model.addAttribute("newOrder", newOrder);
+                })
+                .thenReturn(Rendering.view(TEMPLATE_ORDER)
+                        .build());
     }
 }

@@ -4,18 +4,17 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.reactive.result.view.Rendering;
+import reactor.core.publisher.Mono;
 import ru.yandex.practicum.intershop.dto.Action;
-import ru.yandex.practicum.intershop.dto.ItemDto;
+import ru.yandex.practicum.intershop.dto.ActionRequest;
 import ru.yandex.practicum.intershop.service.CartService;
 
-import java.math.BigDecimal;
-import java.util.List;
-
-import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.REDIRECT_CART_ITEMS;
+import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.CART_ITEMS;
 import static ru.yandex.practicum.intershop.configuration.constants.TemplateConstants.TEMPLATE_CART;
 
 @Controller
@@ -32,34 +31,35 @@ public class CartController {
      * @return Шаблон "cart.html"
      */
     @GetMapping
-    public String getCart(Model model) {
-
-        List<ItemDto> items = cartService.getCart();
-        BigDecimal total = items.stream()
-                .map(item -> item.getPrice().multiply(new BigDecimal(item.getCount())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        model.addAttribute("items", items);
-        model.addAttribute("total", total);
-        model.addAttribute("empty", items.isEmpty());
-
-        return TEMPLATE_CART;
+    public Mono<Rendering> getCart(Model model) {
+        return cartService.getCart()
+                .collectList()
+                .doOnNext(items -> {
+                    java.math.BigDecimal total = items.stream()
+                            .map(item -> item.getPrice().multiply(new java.math.BigDecimal(item.getCount())))
+                            .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+                    model.addAttribute("items", items);
+                    model.addAttribute("total", total);
+                    model.addAttribute("empty", items.isEmpty());
+                })
+                .thenReturn(Rendering.view(TEMPLATE_CART)
+                        .build());
     }
 
     /**
      * Изменение количества товара в корзине
      *
-     * @param itemId Идентификатор товара
-     * @param action Действие с товаром в корзине
+     * @param itemId        Идентификатор товара
+     * @param actionRequest Действие с товаром в корзине
      * @return Редирект на "/cart/items"
      */
     @PostMapping("{id}")
-    public String changeItemCountInCart(
+    public Mono<Rendering> changeItemCountInCart(
             @PathVariable("id") Long itemId,
-            @RequestParam String action
+            @ModelAttribute ActionRequest actionRequest
     ) {
-        cartService.changeItemCountInCartByItemId(itemId, Action.forName(action));
-
-        return REDIRECT_CART_ITEMS;
+        return cartService.changeItemCountInCartByItemId(itemId, Action.forName(actionRequest.action()))
+                .thenReturn(Rendering.redirectTo(CART_ITEMS)
+                        .build());
     }
 }

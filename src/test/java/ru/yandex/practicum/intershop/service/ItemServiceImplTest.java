@@ -1,29 +1,26 @@
-package ru.yandex.practicum.intershop.service.impl;
+package ru.yandex.practicum.intershop.service;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
+import ru.yandex.practicum.intershop.TestConstants;
 import ru.yandex.practicum.intershop.dto.CartItemDto;
 import ru.yandex.practicum.intershop.dto.ItemDto;
 import ru.yandex.practicum.intershop.dto.ItemSort;
 import ru.yandex.practicum.intershop.mapper.ItemMapper;
 import ru.yandex.practicum.intershop.model.ItemEntity;
 import ru.yandex.practicum.intershop.repository.ItemRepository;
+import ru.yandex.practicum.intershop.service.impl.ItemServiceImpl;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.apache.logging.log4j.util.Strings.EMPTY;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static ru.yandex.practicum.intershop.TestConstants.ITEM_COUNT;
@@ -55,67 +52,70 @@ class ItemServiceImplTest {
 
     @Test
     void getItemByIdSuccessfulTest() {
-        when(itemRepository.findById(ITEM_ID))
-                .thenReturn(Optional.of(ITEM_ENTITY));
-        when(itemMapper.toItemDto(ITEM_ENTITY))
-                .thenReturn(ITEM_DTO);
+        when(itemRepository.findById(TestConstants.ITEM_ID)).thenReturn(Mono.just(TestConstants.ITEM_ENTITY));
+        when(itemMapper.toItemDto(TestConstants.ITEM_ENTITY)).thenReturn(ITEM_DTO);
 
-        ItemDto resultItem = itemService.getItemById(ITEM_ID);
+        StepVerifier.create(itemService.getItemById(TestConstants.ITEM_ID))
+                .expectNext(ITEM_DTO)
+                .verifyComplete();
 
-        verify(itemRepository).findById(ITEM_ID);
-        verify(itemMapper).toItemDto(ITEM_ENTITY);
-        assertThat(resultItem, equalTo(ITEM_DTO));
+        verify(itemRepository).findById(TestConstants.ITEM_ID);
+        verify(itemMapper).toItemDto(TestConstants.ITEM_ENTITY);
     }
 
     @Test
     void getItemImageByImageWithWrongImagePathPathSuccessfulTest() {
         ReflectionTestUtils.setField(itemService, "pathForUploadImage", "uploads");
-        byte[] resultImage = itemService.getItemImageByImagePath(ITEM_IMAGE_PATH);
 
-        assertThat(resultImage, equalTo(new byte[0]));
+        StepVerifier.create(itemService.getItemImageByImagePath(ITEM_IMAGE_PATH))
+                .verifyComplete();
     }
 
     @Test
     void findAllItemsPagingAndSortingSuccessfulTest() {
         int pageNumber = 1;
         int pageSize = 10;
-        Pageable page = PageRequest.of(pageNumber - 1, pageSize);
-        List<ItemEntity> itemList = List.of(ITEM_ENTITY);
-        Page<ItemEntity> items = new PageImpl<>(itemList, page, itemList.size());
+        int offset = 0;
+        String sortColumn = "id";
+        Flux<ItemEntity> items = Flux.just(ITEM_ENTITY);
 
-        when(itemRepository.searchAllPagingAndSorting(EMPTY, page))
+        when(itemRepository.searchAllPagingAndSorting(EMPTY, sortColumn, pageSize, offset))
                 .thenReturn(items);
         when(itemMapper.toItemDto(ITEM_ENTITY))
                 .thenReturn(ITEM_DTO);
 
-        List<ItemDto> resultItems = itemService.findAllItemsPagingAndSorting(EMPTY, ItemSort.NO, pageSize, pageNumber);
+        StepVerifier.create(itemService.findAllItemsPagingAndSorting(EMPTY, ItemSort.NO, pageSize, pageNumber))
+                .expectNext(ITEM_DTO)
+                .verifyComplete();
 
-        verify(itemRepository).searchAllPagingAndSorting(EMPTY, page);
+        verify(itemRepository).searchAllPagingAndSorting(EMPTY, sortColumn, pageSize, offset);
         verify(itemMapper).toItemDto(ITEM_ENTITY);
-        assertThat(resultItems.size(), equalTo(1));
-        assertThat(resultItems.getFirst(), equalTo(ITEM_DTO));
     }
 
     @Test
     void findAllItemsByIdsSuccessfulTest() {
-        when(itemRepository.findAllByIdIn(List.of(ITEM_ID)))
-                .thenReturn(List.of(ITEM_ENTITY));
+        when(itemRepository.findAllById(List.of(ITEM_ID)))
+                .thenReturn(Flux.just(ITEM_ENTITY));
         when(itemMapper.toItemDto(ITEM_ENTITY))
                 .thenReturn(ITEM_DTO);
 
-        List<ItemDto> resultItems = itemService.findAllItemsByIds(List.of(ITEM_ID));
+        StepVerifier.create(itemService.findAllItemsByIds(List.of(TestConstants.ITEM_ID)))
+                .expectNext(ITEM_DTO)
+                .verifyComplete();
 
-        verify(itemRepository).findAllByIdIn(List.of(ITEM_ID));
-        verify(itemMapper).toItemDto(ITEM_ENTITY);
-        assertThat(resultItems.size(), equalTo(1));
-        assertThat(resultItems.getFirst(), equalTo(ITEM_DTO));
+        verify(itemRepository).findAllById(java.util.List.of(TestConstants.ITEM_ID));
+        verify(itemMapper).toItemDto(TestConstants.ITEM_ENTITY);
     }
 
     @Test
     void deleteItemSuccessfulTest() {
-        assertDoesNotThrow(() -> itemService.deleteItem(ITEM_ID));
+        when(itemRepository.deleteById(ITEM_ID))
+                .thenReturn(Mono.empty());
 
-        verify(itemRepository).deleteById(ITEM_ID);
+        StepVerifier.create(itemService.deleteItem(TestConstants.ITEM_ID))
+                .verifyComplete();
+
+        verify(itemRepository).deleteById(TestConstants.ITEM_ID);
     }
 
     @Test
@@ -124,9 +124,15 @@ class ItemServiceImplTest {
                 .itemId(ITEM_ID)
                 .count(ITEM_COUNT)
                 .build();
+        when(itemRepository.findById(ITEM_ID))
+                .thenReturn(Mono.just(ITEM_ENTITY));
+        when(itemRepository.save(ITEM_ENTITY))
+                .thenReturn(Mono.just(ITEM_ENTITY));
 
-        assertDoesNotThrow(() -> itemService.updateItem(cartItemDto));
+        StepVerifier.create(itemService.updateItem(cartItemDto))
+                .verifyComplete();
 
-        verify(itemRepository).updateCountItem(ITEM_ID, ITEM_COUNT);
+        verify(itemRepository).findById(ITEM_ID);
+        verify(itemRepository).save(ITEM_ENTITY);
     }
 }
