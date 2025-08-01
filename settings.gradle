@@ -1,1 +1,10 @@
+pluginManagement {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
+}
+
 rootProject.name = 'intershop'
+include 'store-showcase'
+include 'payment-service'
