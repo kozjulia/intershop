@@ -11,7 +11,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @Testcontainers
-@ImportTestcontainers(PostreSqlTestcontainer.class)
+@ImportTestcontainers({PostreSqlTestcontainer.class, RedisTestcontainer.class})
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class BaseIntegrationTest {
 

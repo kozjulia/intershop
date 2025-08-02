@@ -3,6 +3,9 @@ package ru.yandex.practicum.store.showcase.service.impl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +37,7 @@ public class ItemServiceImpl implements ItemService {
     private String pathForUploadImage;
 
     @Override
+    @Cacheable(value = "items", key = "#itemId", unless = "#result == null")
     public Mono<ItemDto> getItemById(Long itemId) {
 
         return itemRepository.findById(itemId)
@@ -50,6 +54,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
+    @Cacheable(value = "allItems", key = "#search + '-' + #pageNumber + '-' + #pageSize + '-' + #itemSort.name()")
     public Flux<ItemDto> findAllItemsPagingAndSorting(String search, ItemSort itemSort, Integer pageSize, Integer pageNumber) {
         int offset = Math.max(0, (pageNumber - 1) * pageSize);
         String sortColumn = resolveSortColumn(itemSort);
@@ -61,13 +66,13 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public Flux<ItemDto> findAllItemsByIds(List<Long> itemIds) {
-
         return itemRepository.findAllById(itemIds)
                 .map(itemMapper::toItemDto);
     }
 
     @Override
     @Transactional
+    @CacheEvict(value = {"items", "allItems"}, allEntries = true)
     public Mono<Long> addItem(String title, String description, FilePart image, Integer count, BigDecimal price) {
 
         ItemEntity item = ItemEntity.builder()
@@ -98,6 +103,7 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     @Transactional
+    @CachePut(value = "items", key = "#itemId")
     public Mono<Void> editItem(Long itemId, String title, String description, FilePart image, Integer count, BigDecimal price) {
 
         return itemRepository.findById(itemId)
@@ -126,6 +132,7 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     @Transactional
+    @CacheEvict(value = {"items", "allItems"}, key = "#itemId")
     public Mono<Void> deleteItem(Long itemId) {
 
         return itemRepository.deleteById(itemId);

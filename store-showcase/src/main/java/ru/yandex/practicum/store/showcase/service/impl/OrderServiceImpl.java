@@ -1,6 +1,8 @@
 package ru.yandex.practicum.store.showcase.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
@@ -29,6 +31,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
+    @CacheEvict(value = {"orders", "allOrders"}, allEntries = true)
     public Mono<Long> createOrder() {
 
         return cartService.getAndResetCart()
@@ -53,6 +56,7 @@ public class OrderServiceImpl implements OrderService {
 
 
     @Override
+    @Cacheable(value = "allOrders")
     public Flux<OrderDto> findOrders() {
 
         return orderRepository.findAll()
@@ -66,6 +70,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Cacheable(value = "orders", key = "#orderId", unless = "#result == null")
     public Mono<OrderDto> findOrderById(Long orderId) {
 
         return orderRepository.findById(orderId)

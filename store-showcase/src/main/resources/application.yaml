@@ -29,6 +29,16 @@ spring:
     user: ${SPRING_DATASOURCE_USER:sa}
     password: ${SPRING_DATASOURCE_PASSWORD:sa}
 
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: PT5M    # TTL по умолчанию для кешей
+
   thymeleaf:
     check-template-location: true
     cache: false

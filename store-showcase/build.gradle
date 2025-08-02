@@ -47,6 +47,8 @@ dependencies {
     implementation 'org.flywaydb:flyway-database-postgresql'
     runtimeOnly 'org.postgresql:postgresql' // JDBC драйвер для Flyway
 
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive'
+
     annotationProcessor 'org.projectlombok:lombok'
     testCompileOnly 'org.projectlombok:lombok'
     testAnnotationProcessor 'org.projectlombok:lombok'
@@ -57,7 +59,8 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-testcontainers'
     testImplementation 'org.testcontainers:junit-jupiter'
     testImplementation 'org.testcontainers:postgresql'
-    testImplementation "org.testcontainers:r2dbc"
+    testImplementation 'com.redis:testcontainers-redis:2.2.2'
+    testImplementation 'org.testcontainers:r2dbc'
     testImplementation 'io.projectreactor:reactor-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
