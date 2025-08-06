@@ -1,13 +1,17 @@
 package ru.yandex.practicum.store.showcase.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import ru.yandex.practicum.store.showcase.client.api.PaymentApi;
+import ru.yandex.practicum.store.showcase.client.model.PaymentRequest;
 import ru.yandex.practicum.store.showcase.dto.OrderDto;
+import ru.yandex.practicum.store.showcase.exception.PaymentException;
 import ru.yandex.practicum.store.showcase.mapper.ItemMapper;
 import ru.yandex.practicum.store.showcase.model.OrderEntity;
 import ru.yandex.practicum.store.showcase.model.OrderItemEntity;
@@ -18,11 +22,15 @@ import ru.yandex.practicum.store.showcase.service.CartService;
 import ru.yandex.practicum.store.showcase.service.ItemService;
 import ru.yandex.practicum.store.showcase.service.OrderService;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
 
+    private static final String PAYMENT_ERROR = "Ошибка при обращении в платежный сервис";
+
     private final ItemMapper itemMapper;
+    private final PaymentApi paymentApi;
     private final CartService cartService;
     private final ItemService itemService;
     private final ItemRepository itemRepository;
@@ -34,7 +42,13 @@ public class OrderServiceImpl implements OrderService {
     @CacheEvict(value = {"orders", "allOrders"}, allEntries = true)
     public Mono<Long> createOrder() {
 
-        return cartService.getAndResetCart()
+        return cartService.getCartTotalSum()
+                .doOnNext(totalSum -> paymentApi.makePayment(new PaymentRequest().sum(totalSum)))
+                .onErrorResume(error -> {
+                    log.error(PAYMENT_ERROR + ": {}", error.getMessage(), error);
+                    throw new PaymentException(PAYMENT_ERROR, error);
+                })
+                .flatMapMany(totalSum -> cartService.getAndResetCart())
                 .collectList()
                 .flatMap(items ->
                         orderRepository.save(OrderEntity.builder().build())

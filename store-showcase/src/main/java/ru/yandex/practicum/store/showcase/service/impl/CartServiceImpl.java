@@ -7,10 +7,12 @@ import ru.yandex.practicum.store.showcase.dto.Action;
 import ru.yandex.practicum.store.showcase.dto.CartItemDto;
 import ru.yandex.practicum.store.showcase.dto.ItemDto;
 import ru.yandex.practicum.store.showcase.exception.NotFoundException;
+import ru.yandex.practicum.store.showcase.repository.ItemRepository;
 import ru.yandex.practicum.store.showcase.service.CartService;
 import ru.yandex.practicum.store.showcase.service.ItemService;
 import reactor.core.publisher.Mono;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,6 +26,7 @@ public class CartServiceImpl implements CartService {
     private final Map<Long, Integer> cart = new ConcurrentHashMap<>();
 
     private final ItemService itemService;
+    private final ItemRepository itemRepository;
 
     @Override
     public Flux<ItemDto> getCart() {
@@ -54,6 +57,15 @@ public class CartServiceImpl implements CartService {
                 .toList();
         cart.clear();
         return Flux.fromIterable(cartItemDtos);
+    }
+
+    @Override
+    public Mono<BigDecimal> getCartTotalSum() {
+        return Flux.fromStream(cart.entrySet().stream())
+                .flatMap(entry -> itemRepository.findById(entry.getKey())
+                        .map(item -> item.getPrice().multiply(BigDecimal.valueOf(entry.getValue())))
+                )
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     private ItemDto convertItemWithCartCount(ItemDto item) {

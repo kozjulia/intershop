@@ -22,9 +22,6 @@ allprojects {
     compileJava.options.encoding = 'UTF-8'
     compileTestJava.options.encoding = 'UTF-8'
 
-    //group = 'ru.yandex.practicum'
-    //version = '1.0.0-SNAPSHOT'
-
     apply plugin: 'java'
     apply plugin: 'io.spring.dependency-management'
     apply plugin: 'org.springframework.boot'

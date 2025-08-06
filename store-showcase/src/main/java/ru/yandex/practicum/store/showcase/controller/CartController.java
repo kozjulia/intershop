@@ -1,6 +1,7 @@
 package ru.yandex.practicum.store.showcase.controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,16 +11,22 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.reactive.result.view.Rendering;
 import reactor.core.publisher.Mono;
+import ru.yandex.practicum.store.showcase.client.model.BalanceResponse;
 import ru.yandex.practicum.store.showcase.dto.Action;
 import ru.yandex.practicum.store.showcase.dto.ActionRequest;
 import ru.yandex.practicum.store.showcase.service.CartService;
 import ru.yandex.practicum.store.showcase.configuration.constants.TemplateConstants;
+import ru.yandex.practicum.store.showcase.client.api.PaymentApi;
 
+import java.math.BigDecimal;
+
+@Slf4j
 @Controller
 @RequestMapping("/cart/items")
 @RequiredArgsConstructor
 public class CartController {
 
+    private final PaymentApi paymentApi;
     private final CartService cartService;
 
     /**
@@ -30,7 +37,14 @@ public class CartController {
      */
     @GetMapping
     public Mono<Rendering> getCart(Model model) {
-        return cartService.getCart()
+        return paymentApi.getBalance()
+                .map(BalanceResponse::getBalance)
+                .onErrorResume(error -> {
+                    log.error("Ошибка при обращении в платежный сервис: {}", error.getMessage(), error);
+                    return Mono.just(BigDecimal.ONE.negate());
+                })
+                .doOnNext(balance -> model.addAttribute("balance", balance))
+                .flatMapMany(balance -> cartService.getCart())
                 .collectList()
                 .doOnNext(items -> {
                     java.math.BigDecimal total = items.stream()
