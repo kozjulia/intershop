@@ -4,3 +4,6 @@ server:
 spring:
   application:
     name: payment-service
+
+service:
+  default-balance: ${DEFAULT_BALANCE:3000}
