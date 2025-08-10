@@ -43,31 +43,34 @@ public class OrderServiceImpl implements OrderService {
     public Mono<Long> createOrder() {
 
         return cartService.getCartTotalSum()
-                .doOnNext(totalSum -> paymentApi.makePayment(new PaymentRequest().sum(totalSum)))
-                .onErrorResume(error -> {
-                    log.error(PAYMENT_ERROR + ": {}", error.getMessage(), error);
-                    throw new PaymentException(PAYMENT_ERROR, error);
-                })
-                .flatMapMany(totalSum -> cartService.getAndResetCart())
-                .collectList()
-                .flatMap(items ->
-                        orderRepository.save(OrderEntity.builder().build())
-                                .flatMap(order -> {
-                                    Flux<OrderItemEntity> orderItemsFlux = Flux.fromIterable(items)
-                                            .flatMap(item -> itemRepository.findById(item.getItemId())
-                                                    .map(itemEntity -> OrderItemEntity.builder()
-                                                            .orderId(order.getId())
-                                                            .itemId(itemEntity.getId())
-                                                            .count(item.getCount())
-                                                            .build()));
-                                    return orderItemsFlux.collectList()
-                                            .flatMap(orderItemRepository::saveAll)
-                                            .thenMany(Flux.fromIterable(items))
-                                            .flatMap(itemService::updateItem)
-                                            .then(Mono.just(order.getId()));
-                                }));
+                .flatMap(totalSum ->
+                        paymentApi.makePayment(new PaymentRequest().sum(totalSum))
+                                .onErrorResume(error -> {
+                                    log.error(PAYMENT_ERROR + ": {}", error.getMessage(), error);
+                                    return Mono.error(new PaymentException(PAYMENT_ERROR, error));
+                                })
+                                .thenMany(cartService.getAndResetCart())
+                                .collectList()
+                                .flatMap(items ->
+                                        orderRepository.save(OrderEntity.builder().build())
+                                                .flatMap(order -> {
+                                                    Flux<OrderItemEntity> orderItemsFlux = Flux.fromIterable(items)
+                                                            .flatMap(item -> itemRepository.findById(item.getItemId())
+                                                                    .map(itemEntity -> OrderItemEntity.builder()
+                                                                            .orderId(order.getId())
+                                                                            .itemId(itemEntity.getId())
+                                                                            .count(item.getCount())
+                                                                            .build())
+                                                            );
+                                                    return orderItemsFlux.collectList()
+                                                            .flatMap(orderItemRepository::saveAll)
+                                                            .thenMany(Flux.fromIterable(items))
+                                                            .flatMap(itemService::updateItem)
+                                                            .then(Mono.just(order.getId()));
+                                                })
+                                )
+                );
     }
-
 
     @Override
     @Cacheable(value = "allOrders")

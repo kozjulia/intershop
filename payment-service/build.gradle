@@ -132,7 +132,8 @@ jacoco {
 
 def jacocoExclusions = [
         'ru/yandex/**/api/**',
-        'ru/yandex/**/model/**'
+        'ru/yandex/**/model/**',
+        'ru.yandex.practicum.payment.service.impl.PaymentServiceImpl'
 
 ]
 

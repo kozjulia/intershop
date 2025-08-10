@@ -17,4 +17,6 @@ public interface CartService {
     Flux<CartItemDto> getAndResetCart();
 
     Mono<BigDecimal> getCartTotalSum();
+
+    Mono<BigDecimal> getBalance();
 }
