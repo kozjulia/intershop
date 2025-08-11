@@ -1,29 +1,48 @@
 version: '3.8'
 
 services:
-  intershop:
-    build: .
-    image: intershop
-    container_name: intershop-container
+  payment-service:
+    build: payment-service
+    image: payment-service
+    container_name: payment-service-container
+    ports:
+      - 8088:8088
+    restart: on-failure
+    environment:
+      - DEFAULT_BALANCE=3000
+
+  store-showcase:
+    build: store-showcase
+    image: store-showcase
+    container_name: store-showcase-container
     ports:
       - 8087:8087
     depends_on:
-      - intershop-db
+      - store-showcase-db
     restart: on-failure
     environment:
-      - SPRING_DATASOURCE_R2DBC_URL=r2dbc:postgresql://intershop-db:5432/intershop
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://intershop-db:5432/intershop
-      - SPRING_DATASOURCE_USER=intershop
-      - SPRING_DATASOURCE_PASSWORD=intershop
+      - SPRING_DATASOURCE_R2DBC_URL=r2dbc:postgresql://store-showcase-db:5432/store-showcase
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://store-showcase-db:5432/store-showcase
+      - SPRING_DATASOURCE_USER=store-showcase
+      - SPRING_DATASOURCE_PASSWORD=store-showcase
+      - PAYMENT_CLIENT_HOST=payment-service
+      - PAYMENT_CLIENT_PORT=8088
+      - spring.data.redis.host=store-showcase-cache
+      - spring.data.redis.port=6379
 
-  intershop-db:
+  store-showcase-db:
     image: postgres:15
-    container_name: intershop-db-container
+    container_name: store-showcase-db-container
     volumes:
       - /var/lib/postgresql/data/
     ports:
       - 6541:5432
     environment:
-      - POSTGRES_DB=intershop
-      - POSTGRES_USER=intershop
-      - POSTGRES_PASSWORD=intershop
+      - POSTGRES_DB=store-showcase
+      - POSTGRES_USER=store-showcase
+      - POSTGRES_PASSWORD=store-showcase
+
+  store-showcase-cache:
+    image: redis:7.4.2-bookworm
+    ports:
+      - '6379:6379'

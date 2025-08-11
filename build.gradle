@@ -1,129 +1,31 @@
 plugins {
     id 'java'
-    id 'jacoco'
-    id 'checkstyle'
-    id 'org.springframework.boot' version '3.5.0'
     id 'io.spring.dependency-management' version '1.1.7'
-    id 'com.gorylenko.gradle-git-properties' version '2.4.2'
-}
-
-group = 'ru.yandex.practicum'
-version = '1.0.0-SNAPSHOT'
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
-    compileJava.options.encoding = 'UTF-8'
-    compileTestJava.options.encoding = 'UTF-8'
-}
-
-configurations {
-    compileOnly {
-        extendsFrom annotationProcessor
-    }
-}
-
-springBoot {
-    buildInfo()
+    id 'org.springframework.boot' version '3.5.0'
 }
 
 bootJar {
-    launchScript()
+    enabled false
 }
 
-repositories {
-    mavenLocal()
-    mavenCentral()
+jar {
+    enabled false
 }
 
-dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-webflux'
-    implementation "org.springframework.boot:spring-boot-starter-data-r2dbc"
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
-    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
-
-    runtimeOnly 'org.postgresql:r2dbc-postgresql'
-    implementation 'org.flywaydb:flyway-core'
-    implementation 'org.flywaydb:flyway-database-postgresql'
-    runtimeOnly 'org.postgresql:postgresql' // JDBC драйвер для Flyway
-
-    annotationProcessor 'org.projectlombok:lombok'
-    testCompileOnly 'org.projectlombok:lombok'
-    testAnnotationProcessor 'org.projectlombok:lombok'
-    implementation 'org.mapstruct:mapstruct:1.5.5.Final'
-    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
-
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
-    testImplementation 'org.testcontainers:junit-jupiter'
-    testImplementation 'org.testcontainers:postgresql'
-    testImplementation "org.testcontainers:r2dbc"
-    testImplementation 'io.projectreactor:reactor-test'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-}
-
-tasks.named('test') {
-    failFast = true
-    useJUnitPlatform()
-    finalizedBy jacocoTestReport
-    testLogging {
-        events = ['FAILED', 'PASSED', 'SKIPPED']
-    }
-}
-
-checkstyle {
-    configDirectory.set(file("$rootProject.projectDir/checkstyle"))
-}
-
-jacoco {
-    toolVersion = '0.8.12'
-}
-
-def jacocoExclusions = [
-        'ru/yandex/**/controller/**',
-        'ru/yandex/**/service/**',
-        'ru.yandex.practicum.intershop.repository.OrderItemRepository',
-        'ru.yandex.practicum.intershop.dto.OrderDto',
-        'ru.yandex.practicum.intershop.exception.NotFoundException',
-        'ru.yandex.practicum.intershop.mapper.ItemMapperImpl'
-]
-
-jacocoTestCoverageVerification {
-    violationRules {
-        rule {
-            element = 'CLASS'
-            excludes = jacocoExclusions.stream().map { it.replace('/', '.') }.collect()
-            limit {
-                counter = 'INSTRUCTION'
-                minimum = 0.3
-            }
-            limit {
-                counter = 'METHOD'
-                minimum = 0.3
-            }
-            limit {
-                counter = 'BRANCH'
-                minimum = 0.3
-            }
+allprojects {
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(21)
         }
     }
-}
 
-jacocoTestReport {
-    dependsOn test
-    reports {
-        xml.required = false
-        csv.required = false
-    }
-    afterEvaluate {
-        classDirectories.setFrom(files(classDirectories.files.collect {
-            fileTree(dir: it, exclude: jacocoExclusions)
-        }))
-    }
-}
+    compileJava.options.encoding = 'UTF-8'
+    compileTestJava.options.encoding = 'UTF-8'
 
-check.dependsOn jacocoTestCoverageVerification
+    apply plugin: 'java'
+    apply plugin: 'io.spring.dependency-management'
+    apply plugin: 'org.springframework.boot'
+}
 
 wrapper {
     gradleVersion = '8.14'

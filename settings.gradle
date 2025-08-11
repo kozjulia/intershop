@@ -1,1 +1,11 @@
+pluginManagement {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
 rootProject.name = 'intershop'
+include 'store-showcase'
+include 'payment-service'
