@@ -42,7 +42,7 @@ spring:
             clientAuthenticationMethod: client_secret_post
         provider:
           keycloak:
-            issuer-uri: http://localhost:8080/realms/intershop #todo
+            issuer-uri: ${OAUTH2_SERVER:http://localhost:8080/realms/intershop}
 
   data:
     redis:
