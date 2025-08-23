@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.BodyInserters;
@@ -20,6 +21,7 @@ class ItemControllerIntegrationTest extends BaseIntegrationTest {
     private ItemRepository itemRepository;
 
     @Test
+    @WithMockUser
     void addItem_shouldAddItemToDatabaseAndRedirectTest() {
 
         byte[] fakeImageBytes = "fake-image-content".getBytes(StandardCharsets.UTF_8);
@@ -51,6 +53,7 @@ class ItemControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
+    @WithMockUser
     void deleteItem_shouldRemoveItemFromDatabaseAndRedirectTest() {
         webTestClient.post()
                 .uri("/items/" + TestConstants.ITEM_ID + "/delete")

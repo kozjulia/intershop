@@ -2,6 +2,7 @@ package ru.yandex.practicum.store.showcase.controller;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import ru.yandex.practicum.store.showcase.BaseIntegrationTest;
 import ru.yandex.practicum.store.showcase.TestConstants;
 
@@ -30,6 +31,7 @@ class MainControllerTest extends BaseIntegrationTest {
     }
 
     @Test
+    @WithMockUser
     void changeItemCountInCart_shouldRedirectTest() {
         webTestClient
                 .post()

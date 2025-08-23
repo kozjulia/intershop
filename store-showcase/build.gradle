@@ -149,7 +149,8 @@ def jacocoExclusions = [
         'ru.yandex.practicum.store.showcase.dto.OrderDto',
         'ru.yandex.practicum.store.showcase.exception.NotFoundException',
         'ru.yandex.practicum.store.showcase.exception.PaymentException',
-        'ru.yandex.practicum.store.showcase.mapper.ItemMapperImpl'
+        'ru.yandex.practicum.store.showcase.mapper.ItemMapperImpl',
+        'ru.yandex.practicum.store.showcase.mapper.UserMapperImpl'
 ]
 
 jacocoTestCoverageVerification {

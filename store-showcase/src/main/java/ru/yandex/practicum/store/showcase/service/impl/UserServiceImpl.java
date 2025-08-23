@@ -53,14 +53,21 @@ public class UserServiceImpl implements UserService {
                                 .switchIfEmpty(Mono.just(userDto.getUsername()))
                 )
                 .flatMap(name -> {
-                    UserDetails userDetails = User.withUsername(userDto.getUsername()).password(userDto.getPassword()).passwordEncoder(passwordEncoder::encode).build();
+                    UserDetails userDetails = User.withUsername(userDto.getUsername())
+                            .password(userDto.getPassword())
+                            .passwordEncoder(passwordEncoder::encode)
+                            .build();
                     return insertUser(userDto.getUsername(), userDetails.getPassword());
                 })
                 .flatMap(userEntity ->
                         exchange.getSession()
                                 .doOnNext(session -> {
                                     SecurityContextImpl securityContext = new SecurityContextImpl();
-                                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userEntity.getUsername(), userEntity.getPassword(), List.of());
+                                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                                            userEntity.getUsername(),
+                                            userEntity.getPassword(),
+                                            List.of()
+                                    );
                                     securityContext.setAuthentication(authentication);
 
                                     session.getAttributes().put(DEFAULT_SPRING_SECURITY_CONTEXT_ATTR_NAME, securityContext);
