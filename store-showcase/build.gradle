@@ -58,7 +58,6 @@ dependencies {
 
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.5'
     implementation 'io.swagger.core.v3:swagger-annotations:2.2.34'
-    implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity'
 
     annotationProcessor 'org.projectlombok:lombok'
     testCompileOnly 'org.projectlombok:lombok'

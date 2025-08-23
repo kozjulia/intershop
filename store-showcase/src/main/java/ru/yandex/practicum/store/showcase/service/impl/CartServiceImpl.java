@@ -14,6 +14,7 @@ import ru.yandex.practicum.store.showcase.repository.ItemRepository;
 import ru.yandex.practicum.store.showcase.service.CartService;
 import ru.yandex.practicum.store.showcase.service.ItemService;
 import reactor.core.publisher.Mono;
+import ru.yandex.practicum.store.showcase.service.OAuth2Service;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -31,6 +32,7 @@ public class CartServiceImpl implements CartService {
 
     private final PaymentApi paymentApi;
     private final ItemService itemService;
+    private final OAuth2Service oAuth2Service;
     private final ItemRepository itemRepository;
 
     @Override
@@ -74,7 +76,12 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public Mono<BigDecimal> getBalance() {
-        return paymentApi.getBalance()
+        return oAuth2Service
+                .getTokenValue()
+                .flatMap(accessToken -> {
+                    paymentApi.getApiClient().addDefaultHeader("Authorization", "Bearer " + accessToken);
+                    return paymentApi.getBalance();
+                })
                 .map(BalanceResponse::getBalance)
                 .onErrorResume(error -> {
                     log.error("Ошибка при обращении в платежный сервис: {}", error.getMessage(), error);
