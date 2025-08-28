@@ -21,6 +21,7 @@ import ru.yandex.practicum.store.showcase.repository.OrderRepository;
 import ru.yandex.practicum.store.showcase.service.CartService;
 import ru.yandex.practicum.store.showcase.service.ItemService;
 import ru.yandex.practicum.store.showcase.service.OrderService;
+import ru.yandex.practicum.store.showcase.service.SecurityService;
 
 @Slf4j
 @Service
@@ -35,6 +36,7 @@ public class OrderServiceImpl implements OrderService {
     private final ItemService itemService;
     private final ItemRepository itemRepository;
     private final OrderRepository orderRepository;
+    private final SecurityService securityService;
     private final OrderItemRepository orderItemRepository;
 
     @Override
@@ -52,31 +54,35 @@ public class OrderServiceImpl implements OrderService {
                                 .thenMany(cartService.getAndResetCart())
                                 .collectList()
                                 .flatMap(items ->
-                                        orderRepository.save(OrderEntity.builder().build())
-                                                .flatMap(order -> {
-                                                    Flux<OrderItemEntity> orderItemsFlux = Flux.fromIterable(items)
-                                                            .flatMap(item -> itemRepository.findById(item.getItemId())
-                                                                    .map(itemEntity -> OrderItemEntity.builder()
-                                                                            .orderId(order.getId())
-                                                                            .itemId(itemEntity.getId())
-                                                                            .count(item.getCount())
-                                                                            .build())
-                                                            );
-                                                    return orderItemsFlux.collectList()
-                                                            .flatMap(orderItemRepository::saveAll)
-                                                            .thenMany(Flux.fromIterable(items))
-                                                            .flatMap(itemService::updateItem)
-                                                            .then(Mono.just(order.getId()));
-                                                })
-                                )
-                );
+                                        securityService.getCurrentUserId()
+                                                .flatMap(userId ->
+                                                        orderRepository.save(OrderEntity.builder()
+                                                                        .userId(userId)
+                                                                        .build())
+                                                                .flatMap(order -> {
+                                                                    Flux<OrderItemEntity> orderItemsFlux = Flux.fromIterable(items)
+                                                                            .flatMap(item -> itemRepository.findById(item.getItemId())
+                                                                                    .map(itemEntity -> OrderItemEntity.builder()
+                                                                                            .orderId(order.getId())
+                                                                                            .itemId(itemEntity.getId())
+                                                                                            .count(item.getCount())
+                                                                                            .build())
+                                                                            );
+                                                                    return orderItemsFlux.collectList()
+                                                                            .flatMap(orderItemRepository::saveAll)
+                                                                            .thenMany(Flux.fromIterable(items))
+                                                                            .flatMap(itemService::updateItem)
+                                                                            .then(Mono.just(order.getId()));
+                                                                })
+                                                )
+                                ));
     }
 
     @Override
-    @Cacheable(value = "allOrders")
     public Flux<OrderDto> findOrders() {
 
-        return orderRepository.findAll()
+        return securityService.getCurrentUserId()
+                .flatMapMany(orderRepository::findAllByUserId)
                 .flatMap(order -> orderItemRepository.findByOrderId(order.getId())
                         .collectList()
                         .map(items -> OrderDto.builder()
@@ -90,7 +96,8 @@ public class OrderServiceImpl implements OrderService {
     @Cacheable(value = "orders", key = "#orderId", unless = "#result == null")
     public Mono<OrderDto> findOrderById(Long orderId) {
 
-        return orderRepository.findById(orderId)
+        return securityService.getCurrentUserId()
+                .flatMap(userId -> orderRepository.findByIdAndUserId(orderId, userId))
                 .flatMap(order -> orderItemRepository.findByOrderId(order.getId())
                         .collectList()
                         .map(items -> OrderDto.builder()

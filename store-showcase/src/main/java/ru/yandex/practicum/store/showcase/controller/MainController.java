@@ -71,7 +71,7 @@ public class MainController {
             @PathVariable("id") Long itemId,
             @ModelAttribute ActionRequest actionRequest
     ) {
-        return Mono.fromRunnable(() -> cartService.changeItemCountInCartByItemId(itemId, Action.forName(actionRequest.action())))
+        return cartService.changeItemCountInCartByItemId(itemId, Action.forName(actionRequest.action()))
                 .thenReturn(Rendering.redirectTo(MAIN_ITEMS)
                         .build());
     }

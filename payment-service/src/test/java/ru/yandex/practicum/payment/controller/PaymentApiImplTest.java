@@ -1,12 +1,18 @@
 package ru.yandex.practicum.payment.controller;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
+import ru.yandex.practicum.payment.configuration.SecurityConfiguration;
 import ru.yandex.practicum.payment.service.PaymentService;
 import ru.yandex.practicum.payment.service.model.BalanceResponse;
 import ru.yandex.practicum.payment.service.model.PaymentRequest;
@@ -17,6 +23,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 
 @WebFluxTest(PaymentApiImpl.class)
+@Import(SecurityConfiguration.class)
 class PaymentApiImplTest {
 
     @MockitoBean
@@ -25,7 +32,16 @@ class PaymentApiImplTest {
     @Autowired
     private WebTestClient webTestClient;
 
+    @MockitoBean
+    private ReactiveJwtDecoder reactiveJwtDecoder;
+
+    @AfterEach
+    public void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
+
     @Test
+    @WithMockUser
     void getBalanceSuccessfulTest() {
 
         BalanceResponse expectedBalance = new BalanceResponse();
@@ -45,6 +61,7 @@ class PaymentApiImplTest {
     }
 
     @Test
+    @WithMockUser
     void makePaymentSuccessfulTest() {
 
         PaymentRequest request = new PaymentRequest();
@@ -63,6 +80,7 @@ class PaymentApiImplTest {
     }
 
     @Test
+    @WithMockUser
     void makePaymentWithStatusConflictTest() {
 
         PaymentRequest request = new PaymentRequest();

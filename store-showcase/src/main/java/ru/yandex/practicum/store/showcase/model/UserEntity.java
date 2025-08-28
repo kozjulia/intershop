@@ -14,12 +14,14 @@ import org.springframework.data.relational.core.mapping.Table;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table("orders")
+@Table("users")
 @EqualsAndHashCode(of = "id")
-public class OrderEntity {
+public class UserEntity {
 
     @Id
     private Long id;
 
-    private Long userId;
+    private String username;
+
+    private String password;
 }

@@ -9,13 +9,16 @@ import ru.yandex.practicum.store.showcase.client.model.BalanceResponse;
 import ru.yandex.practicum.store.showcase.dto.Action;
 import ru.yandex.practicum.store.showcase.dto.CartItemDto;
 import ru.yandex.practicum.store.showcase.dto.ItemDto;
-import ru.yandex.practicum.store.showcase.exception.NotFoundException;
 import ru.yandex.practicum.store.showcase.repository.ItemRepository;
 import ru.yandex.practicum.store.showcase.service.CartService;
 import ru.yandex.practicum.store.showcase.service.ItemService;
 import reactor.core.publisher.Mono;
+import ru.yandex.practicum.store.showcase.service.OAuth2Service;
+import ru.yandex.practicum.store.showcase.service.SecurityService;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,54 +30,79 @@ import static java.util.Objects.isNull;
 @RequiredArgsConstructor
 public class CartServiceImpl implements CartService {
 
-    private final Map<Long, Integer> cart = new ConcurrentHashMap<>();
+    private final Map<Long, Map<Long, Integer>> cart = new ConcurrentHashMap<>();
 
     private final PaymentApi paymentApi;
     private final ItemService itemService;
+    private final OAuth2Service oAuth2Service;
     private final ItemRepository itemRepository;
+    private final SecurityService securityService;
 
     @Override
     public Flux<ItemDto> getCart() {
-        return itemService.findAllItemsByIds(cart.keySet().stream().toList())
-                .map(this::convertItemWithCartCount);
+        return securityService.getCurrentUserId()
+                .flatMapMany(userId -> {
+                    Map<Long, Integer> userCart = cart.get(userId);
+
+                    List<Long> ids = new ArrayList<>(userCart.keySet());
+                    return itemService.findAllItemsByIds(ids)
+                            .map(itemDto -> convertItemWithCartCount(itemDto, userCart));
+                });
     }
 
     @Override
     public Mono<Void> changeItemCountInCartByItemId(Long itemId, Action action) {
-        switch (action) {
-            case PLUS -> cart.compute(itemId, (k, v) -> isNull(v) ? 1 : v + 1);
-            case MINUS -> cart.compute(itemId, (k, v) -> (isNull(v) || v == 0) ? 0 : v - 1);
-            case DELETE -> cart.remove(itemId);
-            default -> Mono.just(new NotFoundException("Действия: " + action + " не существует"));
-        }
-        return Mono.empty();
+        return securityService.getCurrentUserId()
+                .flatMap(userId -> {
+                    Map<Long, Integer> userCart = cart.computeIfAbsent(userId, k -> new HashMap<>());
+
+                    switch (action) {
+                        case PLUS -> userCart.compute(itemId, (k, v) -> isNull(v) ? 1 : v + 1);
+                        case MINUS -> userCart.compute(itemId, (k, v) -> (isNull(v) || v == 0) ? 0 : v - 1);
+                        case DELETE -> userCart.remove(itemId);
+                        default -> log.info("not found action");
+                    }
+                    return Mono.empty();
+                });
     }
 
     @Override
     public Flux<CartItemDto> getAndResetCart() {
-        List<CartItemDto> cartItemDtos = cart.entrySet()
-                .stream()
-                .map(entry -> CartItemDto.builder()
-                        .itemId(entry.getKey())
-                        .count(entry.getValue())
-                        .build())
-                .toList();
-        cart.clear();
-        return Flux.fromIterable(cartItemDtos);
+        return securityService.getCurrentUserId()
+                .flatMapMany(userId -> {
+                    Map<Long, Integer> userCart = cart.get(userId);
+
+                    Flux<CartItemDto> cartItems = Flux.fromStream(
+                            userCart.entrySet().stream()
+                                    .map(entry -> CartItemDto.builder()
+                                            .itemId(entry.getKey())
+                                            .count(entry.getValue())
+                                            .build())
+                    );
+                    cart.remove(userId);
+                    return cartItems;
+                })
+                .switchIfEmpty(Flux.empty());
     }
 
     @Override
     public Mono<BigDecimal> getCartTotalSum() {
-        return Flux.fromStream(cart.entrySet().stream())
-                .flatMap(entry -> itemRepository.findById(entry.getKey())
-                        .map(item -> item.getPrice().multiply(BigDecimal.valueOf(entry.getValue())))
-                )
+        return securityService.getCurrentUserId()
+                .flatMapMany(userId -> Flux.fromIterable((cart.get(userId).entrySet()))
+                        .flatMap(userCart -> itemRepository.findById(userCart.getKey())
+                                .map(item -> item.getPrice().multiply(BigDecimal.valueOf(userCart.getValue())))
+                        ))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     @Override
     public Mono<BigDecimal> getBalance() {
-        return paymentApi.getBalance()
+        return oAuth2Service
+                .getTokenValue()
+                .flatMap(accessToken -> {
+                    paymentApi.getApiClient().addDefaultHeader("Authorization", "Bearer " + accessToken);
+                    return paymentApi.getBalance();
+                })
                 .map(BalanceResponse::getBalance)
                 .onErrorResume(error -> {
                     log.error("Ошибка при обращении в платежный сервис: {}", error.getMessage(), error);
@@ -82,10 +110,8 @@ public class CartServiceImpl implements CartService {
                 });
     }
 
-    private ItemDto convertItemWithCartCount(ItemDto item) {
-        Integer cartCount = cart.getOrDefault(item.getId(), 0);
-        item.setCount(cartCount);
-
+    private ItemDto convertItemWithCartCount(ItemDto item, Map<Long, Integer> userCart) {
+        item.setCount(userCart.computeIfAbsent(item.getId(), k -> 0));
         return item;
     }
 }

@@ -15,7 +15,7 @@ _______
 -------
 
 Приложение написано на **Java 21**, использует **Spring Boot 3**, **Gradle**, **Thymeleaf**, **Webflux**, **Flyway**, *
-*Openapi Generator**,
+*Openapi Generator**, **Spring Security**,
 **JUnit 5**, **Mockito**, **Testcontainers**, **Docker**, API соответствует **REST**, данные хранятся в БД (r2dbc)  *
 *PostgreSQL**, кэш в **Redis**, тесты выполняются в **PostgreSQL**.  
 Тестовое покрытие кода - 21% строк кода.

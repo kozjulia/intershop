@@ -1,7 +1,9 @@
 CREATE TABLE orders
 (
-    id BIGSERIAL NOT NULL,
-    CONSTRAINT orders_pk PRIMARY KEY (id)
+    id      BIGSERIAL NOT NULL,
+    user_id BIGSERIAL NOT NULL,
+    CONSTRAINT orders_pk PRIMARY KEY (id),
+    CONSTRAINT fk_orders_to_users FOREIGN KEY (user_id) REFERENCES orders (id)
 );
 
 CREATE TABLE orders_items
